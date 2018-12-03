@@ -13,7 +13,7 @@ int count;
 int isRepresentative;
 } root;
 
-void choose_case(char *caseFileName);
+char* choose_case(char *caseFileName);
 void get_and_clean_reviews(FILE *caseFile, root roots[], int *sizeOfRootsArray);
 int is_noun(char *word);
 char *convert_to_singular(char *word);
@@ -30,17 +30,20 @@ void find_representatives(root roots[], int numberOfRoots, FILE *synLib);
 int main(void){
 	root roots[ROOTS_ARRAY_SIZE];
 	int sizeOfRootsArray;
-	char caseFileName[20];
-	choose_case(caseFileName);
-	FILE *caseFile, *synLib; 
+	char * caseFileName = choose_case(caseFileName);
+	FILE *caseFile, *synLib;
 	caseFile = fopen(caseFileName, "r"),
 	synLib = fopen("syn_lib.dat", "r");
 
-	if(caseFile != NULL){
+
+
+    // Checking if the files has been opened
+	if(caseFile != NULL && synLib != NULL){
 		printf("%s\n", caseFileName);
 	}
 	else{
-		printf("It didn't work\n");
+		printf("One or both files failed to load. Bye bye.\n");
+        exit(EXIT_FAILURE);
 	}
 
 	get_and_clean_reviews(caseFile, roots, &sizeOfRootsArray);
@@ -48,18 +51,27 @@ int main(void){
 	qsort(roots, sizeOfRootsArray, sizeof(root), compare);
 
     find_representatives(roots, sizeOfRootsArray, synLib);
-	
+
 
 	return 0;
 }
-
 // The user chooses a number, and then a specific string with the name of the file that is returned.
-void choose_case(char *caseFileName){
-	printf("Please write name of file, you motherfucker: ");
-	scanf("%s", caseFileName);
+char* choose_case(char *caseFileName){
+    int caseNumber;
+
+
+    printf("Please write the number of which case you want. \n Shirt: 1 \n Toothbrush: 2 \n Choose a case: ");
+	scanf("%d", &caseNumber);
+
+    switch (caseNumber) {
+        case 1: caseFileName = "shirt.txt"; break;
+        case 2: caseFileName = "tooth.txt"; break;
+    }
+
+    return caseFileName;
 }
 
-//receives a FILE pointer. 
+//receives a FILE pointer.
 //Makes a clean string (with wordnet) with a review in it, and calls the other functions with each individual word.
 void get_and_clean_reviews(FILE *caseFile, root roots[], int *sizeOfRootsArray){
 	int i = 0, j = 0;
@@ -76,7 +88,7 @@ void get_and_clean_reviews(FILE *caseFile, root roots[], int *sizeOfRootsArray){
 		//find the expression that will go inside the while, so it will go through each word.
 
 
-		// int n = find antal ord i review array'en, på en eller anden smart måde. 
+		// int n = find antal ord i review array'en, på en eller anden smart måde.
 		int n = 10;
 		while (i < n){
 
@@ -118,7 +130,7 @@ int index_of_existing_word(char *word, root roots[]){
 
 int compare(const void *p1, const void *p2){
 
-    root *root1 = (root *) p1,         
+    root *root1 = (root *) p1,
            *root2 = (root *) p2;
 
     return strcmp(root1->rootName, root2->rootName);
@@ -139,16 +151,16 @@ void find_representatives(root roots[], int numberOfRoots, FILE *synLib){
 /* Proceduren tager en rod samt en filpointer og efter kaldet
  * peger filpointeren på linjen lige under roden ("dens første synonymlinje"). */
 void find_root(char *root, FILE *file) {
-    
+
     char str[LINE_SIZE];
-    
+
     /* Går til startposition i filen: */
     rewind(file);
 
     do {
         fgets(str, LINE_SIZE, file);
         sscanf(str, "%[^|]", str);
-        
+
         /* Hvis det ikke er en præbetingelse, at ordet findes i library:
         if (feof(library))
             break;*/
