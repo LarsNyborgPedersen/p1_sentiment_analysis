@@ -27,6 +27,7 @@ void make_file(root roots[]);
 int index_of_existing_word(char *word, root roots[]);
 int compare(const void *p1, const void *p2);
 void find_representatives(root roots[], int numberOfRoots, FILE *synLib);
+int syn_in_array (char synonym[], root roots[], int numberOfRoots);
 
 
 int main(void){
