@@ -138,33 +138,71 @@ int compare(const void *p1, const void *p2){
     return strcmp(root1->rootName, root2->rootName);
 }
 
-void find_representatives(root roots[], int numberOfRoots, FILE *synLib){
-    int i = 0;
 
+void find_representatives(root roots[], int numberOfRoots, FILE *synLib) {
+    int i = 0, j = 0, k = 0, synIndex = 0;
+    char synonym[WORD_SIZE], synonymLine[LINE_SIZE];
+    
     for (i = 0; i < numberOfRoots; i++) {
-    	if (roots[i].isRepresentative) {
-    		find_root(roots[i].rootName, synLib);
-    	}
+        find_root(roots[i].rootName, synLib);      
 
+        /* Hvis ordet ikke blev fundet i vores bibliotek: 
+        if (feof(synLib)) {
+            rewind(synLib); continue;
+        }*/
+        
+        do {                        
+            fgets(synonymLine, LINE_SIZE, synLib);
+            
+            for (j = 1; roots[i].isRepresentative == TRUE && synonymLine[j] != '\n' && synonymLine[j] != '*'; j++, k = 0) {
+                
+                while (synonymLine[j] != '|')
+                    synonym[k++] = synonymLine[j++];                    
+                
+                synonym[k] = '\0';
+                
+                synIndex = syn_in_array(synonym, roots, numberOfRoots);
+                
+                if (synIndex != FALSE && roots[i].count < roots[synIndex].count)
+                    roots[i].isRepresentative = 0;
+            }           
+            
+        } while (roots[i].isRepresentative == TRUE && synonymLine[j] != '*');
     }
-
+    
 }
 
-/* Proceduren tager en rod samt en filpointer og efter kaldet
- * peger filpointeren på linjen lige under roden ("dens første synonymlinje"). */
+
+int syn_in_array(char synonym[], root roots[], int numberOfRoots) {
+    
+    int first = 0,
+        last = numberOfRoots - 1,
+        middle;
+
+    while (first <= last) {
+        
+        middle = (first + last) / 2;
+        
+        if (strcmp(roots[middle].rootName, synonym) < 0)
+            first = middle + 1;
+        else if (strcmp(roots[middle].rootName, synonym) > 0)
+            last = middle - 1;
+        else
+            return middle;            
+    }    
+    
+    if (first > last)
+        return FALSE;
+}
+
+
+/*NB: Den her funktion antager, at roden findes i vores bibliotek(!) 
+ Ellers kan man lave en indledende øvelse, så ordet i biblioteket skal matche inkl. pipen. */
 void find_root(char *root, FILE *file) {
-
-    char str[LINE_SIZE];
-
-    /* Går til startposition i filen: */
-    rewind(file);
-
+    int rootLength = strlen(root);
+    char line[LINE_SIZE];
+    
     do {
-        fgets(str, LINE_SIZE, file);
-        sscanf(str, "%[^|]", str);
-
-        /* Hvis det ikke er en præbetingelse, at ordet findes i library:
-        if (feof(library))
-            break;*/
-    } while (strcmp(str, root) != 0);
-}
+        fgets(line, LINE_SIZE, file);
+    } while (strncmp(line, root, rootLength) != 0 && !feof(file));
+}    
