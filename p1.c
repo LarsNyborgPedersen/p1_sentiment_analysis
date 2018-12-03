@@ -1,9 +1,10 @@
-//this program was written by A413
+	//this program was written by A413
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #define WORD_SIZE 100
+#define SYN_ARRAY_SIZE 32
 #define LINE_SIZE 1000
 #define ROOTS_ARRAY_SIZE 1000
 #define FALSE -1
@@ -15,7 +16,9 @@ int count;
 int isRepresentative;
 } root;
 
-char* choose_case(char *caseFileName);
+
+
+char* choose_case(char *caseFileName); 
 void get_and_clean_reviews(FILE *caseFile, root roots[], int *sizeOfRootsArray);
 int is_noun(char *word);
 char *convert_to_singular(char *word);
@@ -27,17 +30,20 @@ void make_file(root roots[]);
 int index_of_existing_word(char *word, root roots[]);
 int compare(const void *p1, const void *p2);
 void find_representatives(root roots[], int numberOfRoots, FILE *synLib);
-int syn_in_array (char synonym[], root roots[], int numberOfRoots);
-
+int syn_in_array(char synonym[], root roots[], int numberOfRoots);
+void make_clusters(root *clusters[][SYN_ARRAY_SIZE], int *sizeOfClustersArray, root roots[], int sizeOfRootsArray, FILE *synLib);
+void print_clusters(root *clusters[][SYN_ARRAY_SIZE], int sizeOfClustersArray);
 
 int main(void){
 	root roots[ROOTS_ARRAY_SIZE];
-	int sizeOfRootsArray;
+	int sizeOfRootsArray,
+		sizeOfClustersArray;
 	char * caseFileName = choose_case(caseFileName);
 	FILE *caseFile, *synLib;
 	caseFile = fopen(caseFileName, "r"),
 	synLib = fopen("syn_lib.dat", "r");
-
+	root *clusters[][SYN_ARRAY_SIZE];
+	
 
 
     // Checking if the files has been opened
@@ -54,6 +60,10 @@ int main(void){
 	qsort(roots, sizeOfRootsArray, sizeof(root), compare);
 
     find_representatives(roots, sizeOfRootsArray, synLib);
+
+    make_clusters(clusters, &sizeOfClustersArray, roots, sizeOfRootsArray, synLib);
+
+    print_clusters(clusters, sizeOfClustersArray);
 
 
 	return 0;
@@ -157,15 +167,17 @@ void find_representatives(root roots[], int numberOfRoots, FILE *synLib) {
             
             for (j = 1; roots[i].isRepresentative == TRUE && synonymLine[j] != '\n' && synonymLine[j] != '*'; j++, k = 0) {
                 
-                while (synonymLine[j] != '|')
+                while (synonymLine[j] != '|') { 
                     synonym[k++] = synonymLine[j++];                    
+                }
                 
                 synonym[k] = '\0';
                 
                 synIndex = syn_in_array(synonym, roots, numberOfRoots);
                 
-                if (synIndex != FALSE && roots[i].count < roots[synIndex].count)
+                if (synIndex != FALSE && roots[i].count < roots[synIndex].count) {
                     roots[i].isRepresentative = 0;
+                }
             }           
             
         } while (roots[i].isRepresentative == TRUE && synonymLine[j] != '*');
@@ -207,3 +219,37 @@ void find_root(char *root, FILE *file) {
         fgets(line, LINE_SIZE, file);
     } while (strncmp(line, root, rootLength) != 0 && !feof(file));
 }    
+
+/* Klyngedannelse. 
+Vi samler største synonymklynge for hvert mulig repræsentant, derefter kopierer vi den ind i vores clutsers array
+*/
+void make_clusters(root *clusters[][SYN_ARRAY_SIZE], int *sizeOfClustersArray, root roots[], int sizeOfRootsArray, FILE *synLib) {
+int i,
+	j;
+
+	for (i = 0; i < sizeOfRootsArray; i++){
+		if (roots[i].isRepresentative) {
+
+		}
+
+	}
+
+	/*arbejder med hver mulig repræsentant for synonym. Samler clusters arrays via adressering & 
+	*/
+	*sizeOfClustersArray = j;
+
+}
+
+/*
+*/
+void print_clusters(root *clusters[][SYN_ARRAY_SIZE]) {
+	int i;
+
+	for (i = 0; i < 10; i++){
+		printf("%s\n", )
+
+	}
+	
+
+}
+
