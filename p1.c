@@ -1,4 +1,4 @@
-//this program was written by A413
+	/* this program was written by A413 */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -7,6 +7,7 @@
 #define SYN_ARRAY_SIZE 32
 #define LINE_SIZE 1000
 #define ROOTS_ARRAY_SIZE 1000
+#define CLUSTERS_SIZE 400
 #define FALSE -1
 #define TRUE 1
 
@@ -18,15 +19,11 @@ int isRepresentative;
 
 
 
-char* choose_case(char *caseFileName); 
+void choose_case(char caseFileName[]); 
 void get_and_clean_reviews(FILE *caseFile, root roots[], int *sizeOfRootsArray);
 int is_noun(char *word);
-char *convert_to_singular(char *word);
-void word_count(char *review, root roots[], int *numberOfRoots);
-void sort_roots(root roots[], int numberOfRoots);
-void group_synonyms(root roots[], int numberOfRoots);
+/* char *convert_to_singular(char *word); */
 void find_root(char *root, FILE *library);
-void make_file(root roots[]);
 int index_of_existing_word(char *word, root roots[]);
 int compare(const void *p1, const void *p2);
 void find_representatives(root roots[], int numberOfRoots, FILE *synLib);
@@ -38,15 +35,18 @@ int main(void){
 	root roots[ROOTS_ARRAY_SIZE];
 	int sizeOfRootsArray,
 		sizeOfClustersArray;
-	char * caseFileName = choose_case(caseFileName);
+	root *clusters[CLUSTERS_SIZE][SYN_ARRAY_SIZE];
 	FILE *caseFile, *synLib;
+
+	char caseFileName[WORD_SIZE];
+	choose_case(caseFileName);
+	
 	caseFile = fopen(caseFileName, "r"),
 	synLib = fopen("syn_lib.dat", "r");
-	root *clusters[][SYN_ARRAY_SIZE];
 	
 
 
-    // Checking if the files has been opened
+    /*  Checking if the files has been opened */
 	if(caseFile != NULL && synLib != NULL){
 		printf("%s\n", caseFileName);
 	}
@@ -68,8 +68,8 @@ int main(void){
 
 	return 0;
 }
-// The user chooses a number, and then a specific string with the name of the file that is returned.
-char* choose_case(char *caseFileName){
+/*  The user chooses a number, and then a specific string with the name of the file is returned with output parameter */
+void choose_case(char caseFileName[]){
     int caseNumber;
 
 
@@ -77,41 +77,44 @@ char* choose_case(char *caseFileName){
 	scanf("%d", &caseNumber);
 
     switch (caseNumber) {
-        case 1: caseFileName = "shirt.txt"; break;
-        case 2: caseFileName = "tooth.txt"; break;
+        case 1: 
+        	strcpy(caseFileName, "shirt.txt");
+        	break;
+        case 2: 
+        	strcpy(caseFileName, "tooth.txt");
+        	break;
     }
-
-    return caseFileName;
 }
 
-//receives a FILE pointer.
-//Makes a clean string (with wordnet) with a review in it, and calls the other functions with each individual word.
-void get_and_clean_reviews(FILE *caseFile, root roots[], int *sizeOfRootsArray){
+/* receives a FILE pointer. */
+/* Makes a clean string (with wordnet) with a review in it, and calls the other functions with each individual word. */
+void get_and_clean_reviews(FILE *caseFile, root roots[], int *sizeOfRootsArray) {
 	int i = 0, j = 0;
-	//Somehow dynamically allocate enough space for reviews in the review char array.
+	int n;
+	/* Somehow dynamically allocate enough space for reviews in the review char array. */
 	char review[1000];
 	char word[WORD_SIZE];
 
-	// maybe implement this later: clean_review()
+	/*  maybe implement this later: clean_review() */
 
-	//At this point in the function, word is only lowercase and in base form in the review array.
+	/* At this point in the function, word is only lowercase and in base form in the review array. */
 
-	while (feof(caseFile)){
+	while (feof(caseFile)) {
 		fgets(review, LINE_SIZE, caseFile);
-		//find the expression that will go inside the while, so it will go through each word.
+		/* find the expression that will go inside the while, so it will go through each word. */
 
 
-		// int n = find antal ord i review array'en, på en eller anden smart måde.
-		int n = 10;
-		while (i < n){
+		/*  int n = find antal ord i review array'en, på en eller anden smart måde. */
+		n = 10;
+		while (i < n) {
 
-			// make some code that assigns a word to the word array.
-			if (is_noun(word)){
+			/*  make some code that assigns a word to the word array. */
+			if (is_noun(word)) {
 				int indexExistingWord = index_of_existing_word(word, roots);
 				if(indexExistingWord != FALSE){
 					roots[indexExistingWord].count++;
 				}
-				else{
+				else {
 					strcpy(roots[j].rootName, word);
 					roots[j].count = 1;
 					roots[j].isRepresentative = TRUE;
@@ -124,18 +127,18 @@ void get_and_clean_reviews(FILE *caseFile, root roots[], int *sizeOfRootsArray){
 	*sizeOfRootsArray = j;
 }
 
-//Checks whether the word is a noun
+/* Checks whether the word is a noun */
 int is_noun(char *word){
-	int is_noun;
+	int is_noun = 0;
 
-	//return 1 if the word is a noun and 0 if it isn't
+	/* return 1 if the word is a noun and 0 if it isn't */
 	return is_noun;
 }
 
 int index_of_existing_word(char *word, root roots[]){
-	int index;
+	int index = -1;
 
-	//index is the index where the words exist, and should be -1 if it doesn't eixst.
+	/* index is the index where the words exist, and should be -1 if it doesn't eixst. */
 	return index;
 }
 
@@ -157,15 +160,16 @@ void find_representatives(root roots[], int numberOfRoots, FILE *synLib) {
     for (i = 0; i < numberOfRoots; i++) {
         find_root(roots[i].rootName, synLib);      
 
-        /* Hvis ordet ikke blev fundet i vores bibliotek: 
+        /* Hvis ordet ikke blev fundet i vores bibliotek: */
         if (feof(synLib)) {
+            roots[i].isRepresentative = 0;
             rewind(synLib); continue;
-        }*/
+        }
         
         do {                        
             fgets(synonymLine, LINE_SIZE, synLib);
             
-            for (j = 1; roots[i].isRepresentative == TRUE && synonymLine[j] != '\n' && synonymLine[j] != '*'; j++, k = 0) {
+            for (j = 1, k = 0; roots[i].isRepresentative == TRUE && synonymLine[j] != '\n' && synonymLine[j] != '*'; j++, k = 0) {
                 
                 while (synonymLine[j] != '|') { 
                     synonym[k++] = synonymLine[j++];                    
@@ -187,7 +191,7 @@ void find_representatives(root roots[], int numberOfRoots, FILE *synLib) {
 
 
 int syn_in_array(char synonym[], root roots[], int numberOfRoots) {
-    
+    int result = 0;
     int first = 0,
         last = numberOfRoots - 1,
         middle;
@@ -200,12 +204,16 @@ int syn_in_array(char synonym[], root roots[], int numberOfRoots) {
             first = middle + 1;
         else if (strcmp(roots[middle].rootName, synonym) > 0)
             last = middle - 1;
-        else
-            return middle;            
-    }    
+        else{ 
+            result = middle;
+            break;      
+        }      
+    } 
     
     if (first > last)
-        return FALSE;
+        result = FALSE;
+
+    return result;
 }
 
 
@@ -225,7 +233,7 @@ Vi samler største synonymklynge for hvert mulig repræsentant, derefter kopiere
 */
 void make_clusters(root *clusters[][SYN_ARRAY_SIZE], int *sizeOfClustersArray, root roots[], int sizeOfRootsArray, FILE *synLib) {
 int i,
-	j;
+	j = 0;
 
 	for (i = 0; i < sizeOfRootsArray; i++){
 		if (roots[i].isRepresentative) {
@@ -242,11 +250,11 @@ int i,
 
 /*
 */
-void print_clusters(root *clusters[][SYN_ARRAY_SIZE]) {
+void print_clusters(root *clusters[][SYN_ARRAY_SIZE], int sizeOfClustersArray) {
 	int i;
 
 	for (i = 0; i < 10; i++){
-		printf("%s\n", )
+		/* printf("%s\n", ) */
 
 	}
 	
