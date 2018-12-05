@@ -20,11 +20,11 @@ int isRepresentative;
 
 
 void choose_case(char caseFileName[]); 
-void get_and_clean_reviews(FILE *caseFile, root roots[], int *sizeOfRootsArray);
-int is_noun(char *word);
+void make_roots_array(FILE *caseFile, root roots[], int *sizeOfRootsArray);
+int is_noun(FILE *nounLib, char *word);
 /* char *convert_to_singular(char *word); */
 void find_root(char *root, FILE *library);
-int index_of_existing_word(char *word, root roots[]);
+int index_of_existing_word(char *word, root roots[], int sizeOfRootsArray);
 int compare(const void *p1, const void *p2);
 void find_representatives(root roots[], int numberOfRoots, FILE *synLib);
 int syn_in_array(char synonym[], root roots[], int numberOfRoots);
@@ -55,7 +55,7 @@ int main(void){
         exit(EXIT_FAILURE);
 	}
 
-	get_and_clean_reviews(caseFile, roots, &sizeOfRootsArray);
+	make_roots_array(caseFile, roots, &sizeOfRootsArray);
 
 	qsort(roots, sizeOfRootsArray, sizeof(root), compare);
 
@@ -88,55 +88,69 @@ void choose_case(char caseFileName[]){
 
 /* receives a FILE pointer. */
 /* Makes a clean string (with wordnet) with a review in it, and calls the other functions with each individual word. */
-void get_and_clean_reviews(FILE *caseFile, root roots[], int *sizeOfRootsArray) {
-	int i = 0, j = 0;
-	int n;
+void make_roots_array(FILE *caseFile, root roots[], int *sizeOfRootsArray) {
+	FILE *nounLib = fopen("noun_lib.dat", "r");
+	int i = 0;
+	int scanRes;
 	/* Somehow dynamically allocate enough space for reviews in the review char array. */
-	char review[1000];
 	char word[WORD_SIZE];
+	*sizeOfRootsArray = 0;
+	printf("HEJSA \n");
+	/* caseFile = fopen("test.txt", "r"); */
+
 
 	/*  maybe implement this later: clean_review() */
 
 	/* At this point in the function, word is only lowercase and in base form in the review array. */
 
-	while (feof(caseFile)) {
-		fgets(review, LINE_SIZE, caseFile);
-		/* find the expression that will go inside the while, so it will go through each word. */
 
+	do {
+			scanRes = fscanf(caseFile, "%s", word);
 
-		/*  int n = find antal ord i review array'en, på en eller anden smart måde. */
-		n = 10;
-		while (i < n) {
+			if (scanRes == 1 && is_noun(nounLib, word)) {
+            	int indexExistingWord = index_of_existing_word(word, roots, *sizeOfRootsArray);
 
-			/*  make some code that assigns a word to the word array. */
-			if (is_noun(word)) {
-				int indexExistingWord = index_of_existing_word(word, roots);
-				if(indexExistingWord != FALSE){
-					roots[indexExistingWord].count++;
-				}
-				else {
-					strcpy(roots[j].rootName, word);
-					roots[j].count = 1;
-					roots[j].isRepresentative = TRUE;
-					j++;
-				}
-			}
-			i++;
-		}
+            	if (indexExistingWord != FALSE) {
+            		roots[indexExistingWord].count++;
+            	}
+            	else {
+            		strcpy(roots[*sizeOfRootsArray].rootName, word);
+					roots[*sizeOfRootsArray].count = 1;
+					roots[*sizeOfRootsArray].isRepresentative = TRUE;
+					(*sizeOfRootsArray)++;
+            	}
+            }
+		} while (scanRes == 1);
+
+	/* Print resultater */
+	for (i = 0; i < *sizeOfRootsArray; i++) {
+		printf("root number %d = %s\n", i, roots[i].rootName);
 	}
-	*sizeOfRootsArray = j;
+
+
+	fclose(nounLib);
+
 }
 
 /* Checks whether the word is a noun */
-int is_noun(char *word){
-	int is_noun = 0;
+int is_noun(FILE *nounLib, char *word) {
+	int is_noun = 1;
 
 	/* return 1 if the word is a noun and 0 if it isn't */
 	return is_noun;
 }
 
-int index_of_existing_word(char *word, root roots[]){
+int index_of_existing_word(char *word, root roots[], int sizeOfRootsArray) {
 	int index = -1;
+	int i;
+
+	printf("word: %s\n", word);
+	for (i = 0; i < sizeOfRootsArray; i++) {
+		if (strcmp(roots[i].rootName, word) == 0) {
+			index = i;
+			
+		}
+	}
 
 	/* index is the index where the words exist, and should be -1 if it doesn't eixst. */
 	return index;
