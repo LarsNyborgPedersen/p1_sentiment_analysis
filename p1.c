@@ -1,8 +1,10 @@
-	/* this program was written by A413 */
+/* this program was written by A413 */
 
+/* ctype is used for the function isalpha */
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 #define WORD_SIZE 100
 #define SYN_ARRAY_SIZE 32
 #define LINE_SIZE 1000
@@ -17,10 +19,9 @@ int count;
 int isRepresentative;
 } root;
 
-
-
 void choose_case(char caseFileName[]); 
-void make_roots_array(FILE *caseFile, root roots[], int *sizeOfRootsArray);
+void make_roots_array(char caseFileName[], root roots[], int *sizeOfRootsArray);
+void cleanReview(FILE *caseFile, FILE *caseFileClean);
 int is_noun(FILE *nounLib, char *word);
 /* char *convert_to_singular(char *word); */
 void find_root(char *root, FILE *library);
@@ -31,47 +32,39 @@ int syn_in_array(char synonym[], root roots[], int numberOfRoots);
 void make_clusters(root *clusters[][SYN_ARRAY_SIZE], int *sizeOfClustersArray, root roots[], int sizeOfRootsArray, FILE *synLib);
 void print_clusters(root *clusters[][SYN_ARRAY_SIZE], int sizeOfClustersArray);
 
-int main(void){
+int main(void) {
 	root roots[ROOTS_ARRAY_SIZE];
-	int sizeOfRootsArray,
-		sizeOfClustersArray;
 	root *clusters[CLUSTERS_SIZE][SYN_ARRAY_SIZE];
-	FILE *caseFile, *synLib;
+    int sizeOfRootsArray,
+        sizeOfClustersArray;
+	FILE *synLib = fopen("syn_lib.dat", "r");
 
 	char caseFileName[WORD_SIZE];
 	choose_case(caseFileName);
 	
-	caseFile = fopen(caseFileName, "r"),
-	synLib = fopen("syn_lib.dat", "r");
-	
-
-
     /*  Checking if the files has been opened */
-	if(caseFile != NULL && synLib != NULL){
-		printf("%s\n", caseFileName);
+	if (synLib != NULL) {
+
+		make_roots_array(caseFileName, roots, &sizeOfRootsArray);
+
+        qsort(roots, sizeOfRootsArray, sizeof(root), compare);
+
+        find_representatives(roots, sizeOfRootsArray, synLib);
+
+        make_clusters(clusters, &sizeOfClustersArray, roots, sizeOfRootsArray, synLib);
+
+        print_clusters(clusters, sizeOfClustersArray);
 	}
-	else{
-		printf("One or both files failed to load. Bye bye.\n");
+	else {
+		printf("File failed to load. Bye bye.\n");
         exit(EXIT_FAILURE);
 	}
-
-	make_roots_array(caseFile, roots, &sizeOfRootsArray);
-
-	qsort(roots, sizeOfRootsArray, sizeof(root), compare);
-
-    find_representatives(roots, sizeOfRootsArray, synLib);
-
-    make_clusters(clusters, &sizeOfClustersArray, roots, sizeOfRootsArray, synLib);
-
-    print_clusters(clusters, sizeOfClustersArray);
-
 
 	return 0;
 }
 /*  The user chooses a number, and then a specific string with the name of the file is returned with output parameter */
-void choose_case(char caseFileName[]){
+void choose_case(char caseFileName[]) {
     int caseNumber;
-
 
     printf("Please write the number of which case you want. \n Shirt: 1 \n Toothbrush: 2 \n Choose a case: ");
 	scanf("%d", &caseNumber);
@@ -88,48 +81,69 @@ void choose_case(char caseFileName[]){
 
 /* receives a FILE pointer. */
 /* Makes a clean string (with wordnet) with a review in it, and calls the other functions with each individual word. */
-void make_roots_array(FILE *caseFile, root roots[], int *sizeOfRootsArray) {
-	FILE *nounLib = fopen("noun_lib.dat", "r");
-	int i = 0;
-	int scanRes;
-	/* Somehow dynamically allocate enough space for reviews in the review char array. */
-	char word[WORD_SIZE];
-	*sizeOfRootsArray = 0;
-	printf("HEJSA \n");
-	/* caseFile = fopen("test.txt", "r"); */
+void make_roots_array(char caseFileName[], root roots[], int *sizeOfRootsArray) {
+    FILE *nounLib = fopen("noun_lib.dat", "r"),
+         *caseFile = fopen(caseFileName, "r"),
+         *caseFileClean = fopen("clean_review.txt", "w+");
+    int i;
+    int scanRes;
+    char word[WORD_SIZE];
+    *sizeOfRootsArray = 0;
+    
+    /* caseFile = fopen("test.txt", "r");           til debugging*/
 
+    if (caseFileClean != NULL) {
 
-	/*  maybe implement this later: clean_review() */
+        cleanReview(caseFile, caseFileClean);
 
-	/* At this point in the function, word is only lowercase and in base form in the review array. */
+        do {
+            scanRes = fscanf(caseFileClean, "%s", word);
 
+            if (scanRes == 1 && is_noun(nounLib, word)) {
+                int indexExistingWord = index_of_existing_word(word, roots, *sizeOfRootsArray);
 
-	do {
-			scanRes = fscanf(caseFile, "%s", word);
-
-			if (scanRes == 1 && is_noun(nounLib, word)) {
-            	int indexExistingWord = index_of_existing_word(word, roots, *sizeOfRootsArray);
-
-            	if (indexExistingWord != FALSE) {
-            		roots[indexExistingWord].count++;
-            	}
-            	else {
-            		strcpy(roots[*sizeOfRootsArray].rootName, word);
-					roots[*sizeOfRootsArray].count = 1;
-					roots[*sizeOfRootsArray].isRepresentative = TRUE;
-					(*sizeOfRootsArray)++;
-            	}
+                if (indexExistingWord == FALSE) {
+                    strcpy(roots[*sizeOfRootsArray].rootName, word);
+                    roots[*sizeOfRootsArray].count = 1;
+                    roots[*sizeOfRootsArray].isRepresentative = TRUE;
+                    (*sizeOfRootsArray)++;
+                }
+                else {
+                    roots[indexExistingWord].count++;
+                }
             }
-		} while (scanRes == 1);
+        } while (scanRes == 1);
 
-	/* Print resultater */
-	for (i = 0; i < *sizeOfRootsArray; i++) {
-		printf("root number %d = %s\n", i, roots[i].rootName);
-	}
+        /* Print resultater: for debugging */
+        for (i = 0; i < *sizeOfRootsArray; i++) {
+            printf("root number %d = %s\n", i, roots[i].rootName);
+        }
+        
 
+        fclose(nounLib);
+        fclose(caseFileClean);
+    }
+    else {
+        printf("One or both files failed to load. Bye bye.\n");
+        exit(EXIT_FAILURE);
+    }
+}
 
-	fclose(nounLib);
+void cleanReview(FILE *caseFile, FILE *caseFileClean) {
+    int currentChar;
 
+    while (!feof(caseFile)) {
+        currentChar = fgetc(caseFile);
+
+        if (isalpha(currentChar)) {
+            fputc(currentChar, caseFileClean);
+        }
+        else {
+            fputc(' ', caseFileClean);
+        }
+    }
+    fclose(caseFile);
+    rewind(caseFileClean);
 }
 
 /* Checks whether the word is a noun */
@@ -141,24 +155,23 @@ int is_noun(FILE *nounLib, char *word) {
 }
 
 int index_of_existing_word(char *word, root roots[], int sizeOfRootsArray) {
-	int index = -1;
-	int i;
+    int index = -1;
+    int i;
 
-	printf("word: %s\n", word);
-	for (i = 0; i < sizeOfRootsArray; i++) {
-		if (strcmp(roots[i].rootName, word) == 0) {
-			index = i;
-			
-		}
-	}
+    for (i = 0; i < sizeOfRootsArray; i++) {
+        if (strcmp(roots[i].rootName, word) == 0) {
+            index = i;
+            
+        }
+    }
 
-	/* index is the index where the words exist, and should be -1 if it doesn't eixst. */
-	return index;
+    /* index is the index where the words exist, and should be -1 if it doesn't eixst. */
+    return index;
 }
 
 
 
-int compare(const void *p1, const void *p2){
+int compare(const void *p1, const void *p2) {
 
     root *root1 = (root *) p1,
            *root2 = (root *) p2;
