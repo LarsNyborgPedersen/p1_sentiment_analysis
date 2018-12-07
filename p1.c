@@ -40,7 +40,7 @@ void print_clusters(root *clusters[][SYN_ARRAY_SIZE], int sizeOfClustersArray);
 int main(void) {
     root roots[ROOTS_ARRAY_SIZE];
     root *clusters[CLUSTERS_SIZE][SYN_ARRAY_SIZE];
-    root EndOfCluster = { "*EOC*", FALSE, FALSE};
+    root EndOfCluster = { "*EOC*", FALSE, FALSE, FALSE};
     int sizeOfRootsArray,
         sizeOfClustersArray;
     FILE *synLib = fopen("syn_lib.txt", "r");
