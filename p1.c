@@ -19,7 +19,7 @@ int count;
 int isRepresentative;
 } root;
 
-void choose_case(char caseFileName[]); 
+void choose_case(char caseFileName[]);
 void make_roots_array(char caseFileName[], root roots[], int *sizeOfRootsArray);
 void cleanReview(FILE *caseFile, FILE *caseFileClean);
 int is_noun(FILE *nounLib, char *word);
@@ -29,53 +29,61 @@ int index_of_existing_word(char *word, root roots[], int sizeOfRootsArray);
 int compare(const void *p1, const void *p2);
 void find_representatives(root roots[], int numberOfRoots, FILE *synLib);
 int syn_in_array(char synonym[], root roots[], int numberOfRoots);
-void make_clusters(root *clusters[][SYN_ARRAY_SIZE], int *sizeOfClustersArray, root roots[], int sizeOfRootsArray, FILE *synLib);
+void make_clusters(root *clusters[][SYN_ARRAY_SIZE], root *EndOfCluster, int *sizeOfClustersArray, root roots[], int sizeOfRootsArray, FILE *synLib);
+int find_biggest_line(char *rootName, root roots[], int sizeOfRootsArray, FILE *synLib);
+int compare_clusters(const void *p1, const void *p2);
+int find_cluster_size (root *cluster[]);
 void print_clusters(root *clusters[][SYN_ARRAY_SIZE], int sizeOfClustersArray);
 
+
 int main(void) {
-	root roots[ROOTS_ARRAY_SIZE];
-	root *clusters[CLUSTERS_SIZE][SYN_ARRAY_SIZE];
+    root roots[ROOTS_ARRAY_SIZE];
+    root roots2[] = {{"canine", 6, 0}, {"cat", 4, 1}, {"dog", 8 , 1}};
+    root *clusters[CLUSTERS_SIZE][SYN_ARRAY_SIZE];
+    root EndOfCluster = { "*EOC*", FALSE, FALSE};
     int sizeOfRootsArray,
         sizeOfClustersArray;
-	FILE *synLib = fopen("syn_lib.txt", "r");
+    FILE *synLib = fopen("syn_lib.txt", "r");
 
-	char caseFileName[WORD_SIZE];
-	choose_case(caseFileName);
-	
+    char caseFileName[WORD_SIZE];
+    choose_case(caseFileName);
+
     /*  Checking if the files has been opened */
-	if (synLib != NULL) {
+    if (synLib != NULL) {
 
-		make_roots_array(caseFileName, roots, &sizeOfRootsArray);
+        make_roots_array(caseFileName, roots, &sizeOfRootsArray);
 
         qsort(roots, sizeOfRootsArray, sizeof(root), compare);
 
         find_representatives(roots, sizeOfRootsArray, synLib);
 
-        make_clusters(clusters, &sizeOfClustersArray, roots, sizeOfRootsArray, synLib);
+        make_clusters(clusters, &EndOfCluster, &sizeOfClustersArray, roots2, 3, synLib);
+
+        qsort(clusters, 2, sizeof(clusters[0]), compare_clusters);
 
         print_clusters(clusters, sizeOfClustersArray);
-	}
-	else {
-		printf("File failed to load. Bye bye.\n");
+    }
+    else {
+        printf("File failed to load. Bye bye.\n");
         exit(EXIT_FAILURE);
-	}
+    }
 
-	return 0;
+    return 0;
 }
 /*  The user chooses a number, and then a specific string with the name of the file is returned with output parameter */
 void choose_case(char caseFileName[]) {
     int caseNumber;
 
     printf("Please write the number of which case you want. \n Shirt: 1 \n Toothbrush: 2 \n Choose a case: ");
-	scanf("%d", &caseNumber);
+    scanf("%d", &caseNumber);
 
     switch (caseNumber) {
-        case 1: 
-        	strcpy(caseFileName, "shirt.txt");
-        	break;
-        case 2: 
-        	strcpy(caseFileName, "tooth.txt");
-        	break;
+        case 1:
+            strcpy(caseFileName, "shirt.txt");
+            break;
+        case 2:
+            strcpy(caseFileName, "tooth.txt");
+            break;
     }
 }
 
@@ -89,7 +97,7 @@ void make_roots_array(char caseFileName[], root roots[], int *sizeOfRootsArray) 
     int scanRes;
     char word[WORD_SIZE];
     *sizeOfRootsArray = 0;
-    
+
     /* caseFile = fopen("test.txt", "r");           til debugging*/
 
     if (caseFileClean != NULL) {
@@ -118,7 +126,7 @@ void make_roots_array(char caseFileName[], root roots[], int *sizeOfRootsArray) 
         for (i = 0; i < *sizeOfRootsArray; i++) {
             printf("root number %d = %s\n", i, roots[i].rootName);
         }
-        
+
 
         fclose(nounLib);
         fclose(caseFileClean);
@@ -148,10 +156,10 @@ void cleanReview(FILE *caseFile, FILE *caseFileClean) {
 
 /* Checks whether the word is a noun */
 int is_noun(FILE *nounLib, char *word) {
-	int is_noun = 1;
+    int is_noun = 1;
 
-	/* return 1 if the word is a noun and 0 if it isn't */
-	return is_noun;
+    /* return 1 if the word is a noun and 0 if it isn't */
+    return is_noun;
 }
 
 int index_of_existing_word(char *word, root roots[], int sizeOfRootsArray) {
@@ -161,7 +169,7 @@ int index_of_existing_word(char *word, root roots[], int sizeOfRootsArray) {
     for (i = 0; i < sizeOfRootsArray; i++) {
         if (strcmp(roots[i].rootName, word) == 0) {
             index = i;
-            
+
         }
     }
 
@@ -183,37 +191,37 @@ int compare(const void *p1, const void *p2) {
 void find_representatives(root roots[], int numberOfRoots, FILE *synLib) {
     int i = 0, j = 0, k = 0, synIndex = 0;
     char synonym[WORD_SIZE], synonymLine[LINE_SIZE];
-    
+
     for (i = 0; i < numberOfRoots; i++) {
-        find_root(roots[i].rootName, synLib);      
+        find_root(roots[i].rootName, synLib);
 
         /* Hvis ordet ikke blev fundet i vores bibliotek: */
         if (feof(synLib)) {
             roots[i].isRepresentative = 0;
             rewind(synLib); continue;
         }
-        
-        do {                        
+
+        do {
             fgets(synonymLine, LINE_SIZE, synLib);
-            
+
             for (j = 1, k = 0; roots[i].isRepresentative == TRUE && synonymLine[j] != '\n' && synonymLine[j] != '*'; j++, k = 0) {
-                
-                while (synonymLine[j] != '|') { 
-                    synonym[k++] = synonymLine[j++];                    
+
+                while (synonymLine[j] != '|') {
+                    synonym[k++] = synonymLine[j++];
                 }
-                
+
                 synonym[k] = '\0';
-                
+
                 synIndex = syn_in_array(synonym, roots, numberOfRoots);
-                
+
                 if (synIndex != FALSE && roots[i].count < roots[synIndex].count) {
                     roots[i].isRepresentative = 0;
                 }
-            }           
-            
+            }
+
         } while (roots[i].isRepresentative == TRUE && synonymLine[j] != '*');
     }
-    
+
 }
 
 
@@ -224,19 +232,19 @@ int syn_in_array(char synonym[], root roots[], int numberOfRoots) {
         middle;
 
     while (first <= last) {
-        
+
         middle = (first + last) / 2;
-        
+
         if (strcmp(roots[middle].rootName, synonym) < 0)
             first = middle + 1;
         else if (strcmp(roots[middle].rootName, synonym) > 0)
             last = middle - 1;
-        else{ 
+        else{
             result = middle;
-            break;      
-        }      
-    } 
-    
+            break;
+        }
+    }
+
     if (first > last)
         result = FALSE;
 
@@ -244,47 +252,154 @@ int syn_in_array(char synonym[], root roots[], int numberOfRoots) {
 }
 
 
-/*NB: Den her funktion antager, at roden findes i vores bibliotek(!) 
+/*NB: Den her funktion antager, at roden findes i vores bibliotek(!)
  Ellers kan man lave en indledende øvelse, så ordet i biblioteket skal matche inkl. pipen. */
 void find_root(char *root, FILE *file) {
     int rootLength = strlen(root);
     char line[LINE_SIZE];
-    
+
     do {
         fgets(line, LINE_SIZE, file);
     } while (strncmp(line, root, rootLength) != 0 && !feof(file));
-}    
+}
 
-/* Klyngedannelse. 
-Vi samler største synonymklynge for hvert mulig repræsentant, derefter kopierer vi den ind i vores clutsers array
+/* Klyngedannelse.
+Vi samler største synonymklynge for hvert mulig repræsentant, derefter kopierer vi den ind i vores clusters array
 */
-void make_clusters(root *clusters[][SYN_ARRAY_SIZE], int *sizeOfClustersArray, root roots[], int sizeOfRootsArray, FILE *synLib) {
-int i,
-	j = 0;
+void make_clusters(root *clusters[][SYN_ARRAY_SIZE], root *EndOfCluster, int *sizeOfClustersArray, root roots[], int sizeOfRootsArray, FILE *synLib) {
 
-	for (i = 0; i < sizeOfRootsArray; i++){
-		if (roots[i].isRepresentative) {
+int i, biggestLineN = 0, j = 0, k = 0, numberOfClusters = 0, membersIndex = 0, clusterIndex = 0, synIndex = 0;
+char synonymLine[LINE_SIZE], synonym[WORD_SIZE];
 
-		}
+rewind(synLib);
 
-	}
+/*Vi tjekker vores array for repræsentanter*/
+for (i = 0, clusterIndex = 0, membersIndex = 0; i < sizeOfRootsArray; i++, membersIndex = 0) {
+    if (roots[i].isRepresentative) {
+        /*Hvis det er en repræsentant, så tilføjer vi det til en cluster*/
+        clusters[clusterIndex][membersIndex++] = &roots[i];
+        /*Vi spoler tilbage i vores fil, før vi søger, da den pointer på linjen under repræsentanten*/
+        find_root(roots[i].rootName, synLib);
 
-	/*arbejder med hver mulig repræsentant for synonym. Samler clusters arrays via adressering & 
-	*/
-	*sizeOfClustersArray = j;
+        /* Hvad er den største synonymlinje? Returnerer int der er linjetal for den største.
+           Måske håndtere tilfældet, hvor repræsentanten er eneste medlem af cluster. */
+        biggestLineN = find_biggest_line(roots[i].rootName, roots, sizeOfRootsArray, synLib);
 
+
+        /*Hvis biggest line er lig 0, så er der ingen synonymlinjer*/
+        if (biggestLineN != 0) {
+            /*Vi henter vores linje*/
+            for (j = 0; j < biggestLineN; j++) {
+                fgets(synonymLine, LINE_SIZE, synLib);
+            }
+
+            /*Kører loopet indtil linejn er slut med newline eller "*" */
+            for (j = 1, k = 0; synonymLine[j] != '\n' && synonymLine[j] != '*'; j++, k = 0) {
+                /*Vi tjekker hvert ord*/
+                while (synonymLine[j] != '|') {
+                    synonym[k++] = synonymLine[j++];
+                }
+                /*Vi nul slutter ordet*/
+                synonym[k] = '\0';
+
+                /*Tjekker om ordet er i vores synonym array*/
+                synIndex = syn_in_array(synonym, roots, sizeOfRootsArray);
+
+                /*Hvis det er, så tilføjer vi det til vores cluster*/
+                if (synIndex != FALSE) {
+                    clusters[clusterIndex][membersIndex++] = &roots[synIndex];
+                }
+            }
+        }
+        /* Vi ved godt at memberIndex bruges som antal member og ikke et index*/
+        clusters[clusterIndex++][membersIndex++] = EndOfCluster;
+    }
+}
+/*Vi tæller størrelsen af vores cluster array op*/
+*sizeOfClustersArray = numberOfClusters;
+}
+
+int find_biggest_line(char *rootName, root roots[], int sizeOfRootsArray, FILE *synLib) {
+
+    int currentBiggestSum = 0, tempSum = 0, biggestLineNr = 0, i = 0, j = 0, synIndex = 0, currentLineNr = 0;
+    char synonymLine[LINE_SIZE], synonym[WORD_SIZE];
+    /*Vi spoler tilbage til starten i vores fil, og finder roden*/
+
+    /*Vi henter vores synonymlinje*/
+    fpos_t synPosition;
+    fgetpos(synLib, &synPosition);
+
+    do {
+        fgets(synonymLine, LINE_SIZE, synLib);
+        currentLineNr++;
+        /*Vi kører indtil linjen er slut*/
+        for (i = 1, j = 0; synonymLine[i] != '\n' && synonymLine[i] != '*'; i++, j = 0) {
+            /*Vi tjekker hvert ord, og tæller hvor langt det er*/
+            while (synonymLine[i] != '|') {
+                synonym[j++] = synonymLine[i++];
+            }
+
+            synonym[j] = '\0';
+            /*Vi tjekker om det er i vores synonym aray*/
+            synIndex = syn_in_array(synonym, roots, sizeOfRootsArray);
+            /*Vi tæller summen for hele linjen op*/
+            if (synIndex != FALSE) {
+                tempSum += roots[synIndex].count;
+            }
+        }
+        /*Vi tjekker om denne linje er større end den tidligere linje*/
+        if (tempSum > currentBiggestSum) {
+            currentBiggestSum = tempSum;
+            biggestLineNr = currentLineNr;
+        }
+
+    } while (synonymLine[i] != '*');
+
+    fsetpos(synLib, &synPosition);
+    return biggestLineNr;
+}
+
+
+
+int compare_clusters(const void *p1, const void *p2) {
+int cluster1Size = 0, cluster2Size = 0;
+
+root  **cluster1 = (root **) p1,
+      **cluster2 = (root **) p2;
+/*Vi finder hyppigheden er hver synonymlinje*/
+cluster1Size = find_cluster_size(cluster1);
+cluster2Size = find_cluster_size(cluster2);
+
+/*Hvis de ikke er lig hinanden, så sortere vi efter hyppighed, eller alfabetisk*/
+if (cluster1Size != cluster2Size)
+    return (cluster1Size > cluster2Size) ? -1 : 1;
+else
+    return strcmp(cluster1[0]->rootName, cluster2[0]->rootName);
+}
+
+
+
+
+
+int find_cluster_size (root *cluster[]) {
+    int i = 0, sum = 0;
+    /*Vi kører loopet indtil arrayet er slut, og addere pointene sammen*/
+    for (i = 0; cluster[i]->count != FALSE; i++) {
+        sum += cluster[i]->count;
+    }
+
+    return sum;
 }
 
 /*
 */
 void print_clusters(root *clusters[][SYN_ARRAY_SIZE], int sizeOfClustersArray) {
-	int i;
+    int i;
 
-	for (i = 0; i < 10; i++){
-		/* printf("%s\n", ) */
+    for (i = 0; i < 10; i++){
+        /* printf("%s\n", ) */
 
-	}
-	
+    }
+
 
 }
-
