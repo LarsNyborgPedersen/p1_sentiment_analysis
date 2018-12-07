@@ -259,12 +259,10 @@ void find_root(char *root, FILE *file) {
     } while (strncmp(line, root, rootLength) != 0 && !feof(file));
 }
 
-/* Klyngedannelse.
-Vi samler største synonymklynge for hvert mulig repræsentant, derefter kopierer vi den ind i vores clusters array
-*/
+/* Vi samler største synonymklynge for hvert mulig repræsentant, derefter kopierer vi den ind i vores clusters array */
 void make_clusters(root *clusters[][SYN_ARRAY_SIZE], root *EndOfCluster, int *sizeOfClustersArray, root roots[], int sizeOfRootsArray, FILE *synLib) {
 
-    int i, biggestLineN = 0, j = 0, k = 0, numberOfClusters = 0, membersIndex = 0, clusterIndex = 0, synIndex = 0;
+    int i = 0, j = 0, k = 0, membersIndex = 0, clusterIndex = 0, synIndex = 0, biggestLineN = 0;
     char synonymLine[LINE_SIZE], synonym[WORD_SIZE];
     /*Vi spoler tilbage i vores fil efter find_representatives*/
     rewind(synLib);
