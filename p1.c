@@ -37,7 +37,7 @@ int main(void) {
 	root *clusters[CLUSTERS_SIZE][SYN_ARRAY_SIZE];
     int sizeOfRootsArray,
         sizeOfClustersArray;
-	FILE *synLib = fopen("syn_lib.dat", "r");
+	FILE *synLib = fopen("syn_lib.txt", "r");
 
 	char caseFileName[WORD_SIZE];
 	choose_case(caseFileName);
