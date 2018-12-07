@@ -14,22 +14,24 @@
 #define TRUE 1
 
 typedef struct  {
-    char rootName[WORD_SIZE];
-    int count;
-    int isRepresentative;
+	char rootName[WORD_SIZE];
+	int count;
+	int isRepresentative;
     int clusterCount;
 } root;
 
-void choose_case(char caseFileName[]);
-void make_roots_array(char caseFileName[], root roots[], int *sizeOfRootsArray);
+void choose_case(char caseFileName[]); 
+void make_roots_array(char caseFileName[], root roots[], root roots2[], int *sizeOfRootsArray, int *sizeOfRootsArray2);
 void cleanReview(FILE *caseFile, FILE *caseFileClean);
-int is_noun(FILE *nounLib, char *word);
+int is_noun(FILE *nounLib, FILE *nounExceptions, char *word, fpos_t *posNoun, fpos_t *posExc);
 /* char *convert_to_singular(char *word); */
 void find_root(char *root, FILE *library);
 int index_of_existing_word(char *word, root roots[], int sizeOfRootsArray);
+int compareLALA(const void *p1, const void *p2);
 int compare(const void *p1, const void *p2);
 void find_representatives(root roots[], int numberOfRoots, FILE *synLib);
 int syn_in_array(char synonym[], root roots[], int numberOfRoots);
+void find_root(char *root, FILE *file);
 void make_clusters(root *clusters[][SYN_ARRAY_SIZE], root *EndOfCluster, int *sizeOfClustersArray, root roots[], int sizeOfRootsArray, FILE *synLib);
 int find_biggest_line(char *rootName, root roots[], int sizeOfRootsArray, FILE *synLib);
 int compare_clusters(const void *p1, const void *p2);
@@ -37,21 +39,26 @@ int find_cluster_size (root *cluster[]);
 void print_clusters(root *clusters[][SYN_ARRAY_SIZE], int sizeOfClustersArray);
 
 
+
 int main(void) {
-    root roots[ROOTS_ARRAY_SIZE];
-    root *clusters[CLUSTERS_SIZE][SYN_ARRAY_SIZE];
-    root EndOfCluster = { "*EOC*", FALSE, FALSE, FALSE};
+	root roots[ROOTS_ARRAY_SIZE];
+	root roots2[ROOTS_ARRAY_SIZE];
+	root *clusters[CLUSTERS_SIZE][SYN_ARRAY_SIZE];
+	root EndOfCluster = { "*EOC*", FALSE, FALSE, FALSE};
     int sizeOfRootsArray,
+    	sizeOfRootsArray2,
         sizeOfClustersArray;
-    FILE *synLib = fopen("syn_lib.txt", "r");
+	FILE *synLib = fopen("syn_lib.dat", "r");
 
-    char caseFileName[WORD_SIZE];
-    choose_case(caseFileName);
+	char caseFileName[WORD_SIZE];
+	choose_case(caseFileName);
 
+    
+	
     /*  Checking if the files has been opened */
-    if (synLib != NULL) {
+	if (synLib != NULL) {
 
-        make_roots_array(caseFileName, roots, &sizeOfRootsArray);
+		make_roots_array(caseFileName, roots, roots2, &sizeOfRootsArray, &sizeOfRootsArray2);
 
         qsort(roots, sizeOfRootsArray, sizeof(root), compare);
 
@@ -59,75 +66,130 @@ int main(void) {
 
         make_clusters(clusters, &EndOfCluster, &sizeOfClustersArray, roots, sizeOfRootsArray, synLib);
 
-        qsort(clusters, sizeOfClustersArray, sizeof(clusters[0]), compare_clusters);
-
         print_clusters(clusters, sizeOfClustersArray);
-    }
-    else {
-        printf("File failed to load. Bye bye.\n");
+	}
+	else {
+		printf("File failed to load. Bye bye.\n");
         exit(EXIT_FAILURE);
-    }
+	}
 
-    return 0;
+	return 0;
 }
-
 /*  The user chooses a number, and then a specific string with the name of the file is returned with output parameter */
 void choose_case(char caseFileName[]) {
     int caseNumber;
 
     printf("Please write the number of which case you want. \n Shirt: 1 \n Toothbrush: 2 \n Choose a case: ");
-    scanf("%d", &caseNumber);
+	scanf("%d", &caseNumber);
 
     switch (caseNumber) {
-        case 1:
-            strcpy(caseFileName, "shirt.txt");
-            break;
-        case 2:
-            strcpy(caseFileName, "tooth.txt");
-            break;
+        case 1: 
+        	strcpy(caseFileName, "shirt.txt");
+        	break;
+        case 2: 
+        	strcpy(caseFileName, "tooth.txt");
+        	break;
     }
 }
 
 /* receives a FILE pointer. */
 /* Makes a clean string (with wordnet) with a review in it, and calls the other functions with each individual word. */
-void make_roots_array(char caseFileName[], root roots[], int *sizeOfRootsArray) {
+void make_roots_array(char caseFileName[], root roots[], root roots2[], int *sizeOfRootsArray, int *sizeOfRootsArray2) {
     FILE *nounLib = fopen("noun_lib.dat", "r"),
+         *nounExceptions = fopen("noun_exc.txt", "r"),
          *caseFile = fopen(caseFileName, "r"),
          *caseFileClean = fopen("clean_review.txt", "w+");
+    fpos_t posNoun, posExc;
     int i;
+    
     int scanRes;
     char word[WORD_SIZE];
     *sizeOfRootsArray = 0;
+    *sizeOfRootsArray2 = 0;
 
+
+    
+    fgetpos(nounLib, &posNoun);
+    fgetpos(nounExceptions, &posExc);
     /* caseFile = fopen("test.txt", "r");           til debugging*/
 
     if (caseFileClean != NULL) {
+
+
 
         cleanReview(caseFile, caseFileClean);
 
         do {
             scanRes = fscanf(caseFileClean, "%s", word);
-
-            if (scanRes == 1 && is_noun(nounLib, word)) {
+            //printf("%s %d\n", word, is_noun(nounLib, nounExceptions, word, &posNoun, &posExc));
+            if (scanRes == 1) {
                 int indexExistingWord = index_of_existing_word(word, roots, *sizeOfRootsArray);
 
                 if (indexExistingWord == FALSE) {
+                	//printf("%s FALSE!!!\n", word);
                     strcpy(roots[*sizeOfRootsArray].rootName, word);
                     roots[*sizeOfRootsArray].count = 1;
                     roots[*sizeOfRootsArray].isRepresentative = TRUE;
                     (*sizeOfRootsArray)++;
                 }
                 else {
+                	//printf("%s TRUE!!!\n", word);
                     roots[indexExistingWord].count++;
                 }
             }
         } while (scanRes == 1);
 
-        /* Print resultater: for debugging */
-        for (i = 0; i < *sizeOfRootsArray; i++) {
-            printf("root number %d = %s\n", i, roots[i].rootName);
+        qsort(roots, *sizeOfRootsArray, sizeof(root), compareLALA);
+
+        for (i = 0; i < *sizeOfRootsArray; ++i){
+        	printf("%d %s\n", i, roots[i].rootName);
         }
 
+        for (i = 0; i < *sizeOfRootsArray; i++) {
+        	if (is_noun(nounLib, nounExceptions, roots[i].rootName, &posNoun, &posExc)) {
+                int indexExistingWord = index_of_existing_word(roots[i].rootName, roots2, *sizeOfRootsArray2);
+
+
+                if (indexExistingWord == FALSE) {
+                	printf("%s FALSE!!!\n", roots[i].rootName);
+                    strcpy(roots2[*sizeOfRootsArray2].rootName, roots[i].rootName);
+                    roots2[*sizeOfRootsArray2].count = 1;
+                    roots2[*sizeOfRootsArray2].isRepresentative = TRUE;
+                    (*sizeOfRootsArray2)++;
+                }
+                else {
+                	printf("%s TRUE!!!\n", roots[i].rootName);
+                    roots[indexExistingWord].count++;
+                }
+            }
+        }
+/*
+        do {
+            scanRes = fscanf(caseFileClean, "%s", word);
+            printf("%s %d\n", word, is_noun(nounLib, nounExceptions, word, &posNoun, &posExc));
+            if (scanRes == 1 && is_noun(nounLib, nounExceptions, word, &posNoun, &posExc)) {
+                int indexExistingWord = index_of_existing_word(word, roots, *sizeOfRootsArray);
+
+                if (indexExistingWord == FALSE) {
+                	printf("%s FALSE!!!\n", word);
+                    strcpy(roots[*sizeOfRootsArray].rootName, word);
+                    roots[*sizeOfRootsArray].count = 1;
+                    roots[*sizeOfRootsArray].isRepresentative = TRUE;
+                    (*sizeOfRootsArray)++;
+                }
+                else {
+                	printf("%s TRUE!!!\n", word);
+                    roots[indexExistingWord].count++;
+                }
+            }
+        } while (scanRes == 1);
+
+*/
+
+        for (i = 0; i < *sizeOfRootsArray2; ++i){
+        	printf("%d %s\n", i, roots2[i].rootName);
+        }
+        
 
         fclose(nounLib);
         fclose(caseFileClean);
@@ -144,11 +206,8 @@ void cleanReview(FILE *caseFile, FILE *caseFileClean) {
     while (!feof(caseFile)) {
         currentChar = fgetc(caseFile);
 
-        if (isalpha(currentChar)) {
+        if (isalpha(currentChar) || currentChar == ' ') {
             fputc(currentChar, caseFileClean);
-        }
-        else {
-            fputc(' ', caseFileClean);
         }
     }
     fclose(caseFile);
@@ -156,10 +215,118 @@ void cleanReview(FILE *caseFile, FILE *caseFileClean) {
 }
 
 /* Checks whether the word is a noun */
-int is_noun(FILE *nounLib, char *word) {
-    int is_noun = 1;
+int is_noun(FILE *nounLib, FILE *nounExceptions, char *word, fpos_t *posNoun, fpos_t *posExc) {
+    int is_noun = 0;
+    char tempNoun[25];
+    char tempAll[48]; //longest line in noun_exc.dat is 46 characters + '\n' (line 1003)
+    char tempSingular[25]; //longest word is 23 letters (line 1003)
+    char tempPlural[25];
+    //fgetpos(nounLib, &posNoun);
+    //Check if word is in nounLib (singular nouns)
+    //rewindLine(nounLib);
+    
 
-    /* return 1 if the word is a noun and 0 if it isn't */
+    fsetpos(nounLib, posNoun);
+    while (!feof(nounLib)) {
+        fgets(tempNoun, 30, nounLib);
+        //printf("%s", tempNoun);
+        tempNoun[strlen(tempNoun) - 1] = 0;
+        if (strcmp(word, tempNoun) == 0) {
+            fseek(nounLib, -(strlen(tempNoun) + 2), SEEK_CUR);
+            fgetpos(nounLib, posNoun);
+            printf("Word was found in nounLib first time\n");
+            is_noun = 1;
+            //printf("1 %d\n", is_noun);
+            return is_noun;
+        }
+    }
+    //printf("HEY HEY HEY HYE\n");
+    //fgetpos(nounExceptions, &posExc);
+    //Check if word is in nounExceptions, and if it is, make it singular
+    //rewindLine(nounExceptions);
+    fsetpos(nounExceptions, posExc);
+    while (!feof(nounExceptions)) {
+        fgets(tempAll, 48, nounExceptions);
+        sscanf(tempAll, "%s %s", tempPlural, tempSingular);
+        //printf("%s %s %s\n", tempAll, tempSingular, tempPlural);
+        if (strcmp(word, tempPlural) == 0) {
+            fgetpos(nounExceptions, posExc);
+            fseek(nounExceptions, -(strlen(tempAll) + 1), SEEK_CUR);
+            printf("Word was found in exceptions list!\n");
+            strcpy(word, tempSingular);
+            is_noun = 1;
+            //printf("2 %d\n", is_noun);
+            return is_noun;
+        }
+    }
+    //Make word singular (if it wasn't an exceptions to normal noun rules)
+    //if end of word = "ches" make it = "ch"
+    if (strcmp(&word[strlen(word) - 4], "ches") == 0) {
+        strcpy(&word[strlen(word) - 4], "ch");
+    }
+    //if end of word = "shes" make it = "sh"
+    else if (strcmp(&word[strlen(word) - 4], "shes") == 0) {
+        strcpy(&word[strlen(word) - 4], "sh");
+    }
+    //if end of word = "men" make it = "man"
+    else if (strcmp(&word[strlen(word) - 3], "men") == 0) {
+        strcpy(&word[strlen(word) - 3], "man");
+    }
+    //if end of word = "ses" make it = "s"
+    else if (strcmp(&word[strlen(word) - 3], "ses") == 0) {
+        strcpy(&word[strlen(word) - 3], "s");
+    }
+    //if end of word = "xes" make it = "x"
+    else if (strcmp(&word[strlen(word) - 3], "xes") == 0) {
+        strcpy(&word[strlen(word) - 3], "x");
+    }
+    //if end of word = "zes" make it = "z"
+    else if (strcmp(&word[strlen(word) - 3], "zes") == 0) {
+        strcpy(&word[strlen(word) - 3], "z");
+    }
+    //if end of word = "ies" make it = "y"
+    else if (strcmp(&word[strlen(word) - 3], "ies") == 0) {
+        strcpy(&word[strlen(word) - 3], "y");
+    }
+    //if end of word = "s" make it = ""
+    else if (strcmp(&word[strlen(word) - 1], "s") == 0) {
+        word[strlen(word) - 1] = 0;
+    }
+    
+    //Check if word is in nounLib (singular nouns)
+    fsetpos(nounLib, posNoun);
+    //rewindLine(nounLib);
+    while (!feof(nounLib)) {
+        fgets(tempNoun, 30, nounLib);
+        tempNoun[strlen(tempNoun) - 1] = 0;
+        if (strcmp(word, tempNoun) == 0) {
+            fseek(nounLib, -(strlen(tempNoun) + 2), SEEK_CUR);
+            fgetpos(nounLib, posNoun);
+            printf("Word was found in nounLib second time\n");
+            is_noun = 1;
+            //printf("3 %d\n", is_noun);
+            return is_noun;
+        }
+    }
+    strcpy(&word[strlen(word)], "e");
+    fsetpos(nounLib, posNoun);
+    //rewindLine(nounLib);
+    while (!feof(nounLib)) {
+        fgets(tempNoun, 30, nounLib);
+        tempNoun[strlen(tempNoun) - 1] = 0;
+        if (strcmp(word, tempNoun) == 0) {
+            fseek(nounLib, -(strlen(tempNoun) + 2), SEEK_CUR);
+            fgetpos(nounLib, posNoun);
+            printf("Word was found in nounLib third time\n");
+            is_noun = 1;
+            //printf("4 %d\n", is_noun);
+            return is_noun;
+        }
+    }
+
+    printf("Word was not found in any file\n");
+    is_noun = 0;
+    //printf("5 %d\n", is_noun);
     return is_noun;
 }
 
@@ -170,7 +337,7 @@ int index_of_existing_word(char *word, root roots[], int sizeOfRootsArray) {
     for (i = 0; i < sizeOfRootsArray; i++) {
         if (strcmp(roots[i].rootName, word) == 0) {
             index = i;
-
+            
         }
     }
 
@@ -178,13 +345,24 @@ int index_of_existing_word(char *word, root roots[], int sizeOfRootsArray) {
     return index;
 }
 
-int compare(const void *p1, const void *p2) {
+int compareLALA(const void *p1, const void *p2) {
 
     root *root1 = (root *) p1,
-         *root2 = (root *) p2;
+           *root2 = (root *) p2;
 
     return strcmp(root1->rootName, root2->rootName);
 }
+
+
+
+int compare(const void *p1, const void *p2) {
+
+    root *root1 = (root *) p1,
+           *root2 = (root *) p2;
+
+    return strcmp(root1->rootName, root2->rootName);
+}
+
 
 void find_representatives(root roots[], int numberOfRoots, FILE *synLib) {
     int i = 0, j = 0, k = 0, synIndex = 0;
