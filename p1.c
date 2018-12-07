@@ -355,12 +355,11 @@ int find_biggest_line(char *rootName, root roots[], int sizeOfRootsArray, FILE *
 }
 
 int compare_clusters(const void *p1, const void *p2) {
-    int cluster1Size = 0, cluster2Size = 0;
-
+  
     root  **cluster1 = (root **) p1,
           **cluster2 = (root **) p2;
 
-    /*Hvis de ikke er lig hinanden, så sorterer vi efter hyppighed, eller alfabetisk*/
+    /*Hvis de ikke er lig hinanden, så sorterer vi efter hyppighed, ellers alfabetisk*/
     if (cluster1[0]->clusterCount != cluster2[0]->clusterCount)
         return (cluster1[0]->clusterCount > cluster2[0]->clusterCount) ? -1 : 1;
     else
