@@ -14,10 +14,10 @@
 #define TRUE 1
 
 typedef struct  {
-char rootName[WORD_SIZE];
-int count;
-int isRepresentative;
-int clusterCount;
+    char rootName[WORD_SIZE];
+    int count;
+    int isRepresentative;
+    int clusterCount;
 } root;
 
 void choose_case(char caseFileName[]);
