@@ -256,7 +256,7 @@ void find_root(char *root, FILE *file) {
 
     do {
         fgets(line, LINE_SIZE, file);
-    } while (strncmp(line, root, rootLength) != 0 && !feof(file));
+    } while ((line[rootLength] != '|' || strncmp(line, root, rootLength)) != 0 && !feof(file));
 }
 
 /* Vi samler største synonymklynge for hvert mulig repræsentant, derefter kopierer vi den ind i vores clusters array */
