@@ -48,7 +48,7 @@ int main(void) {
     int sizeOfRootsArray,
     	sizeOfRootsArray2,
         sizeOfClustersArray;
-	FILE *synLib = fopen("syn_lib.dat", "r");
+	FILE *synLib = fopen("syn_lib.txt", "r");
 
 	char caseFileName[WORD_SIZE];
 	choose_case(caseFileName);
@@ -95,7 +95,7 @@ void choose_case(char caseFileName[]) {
 /* receives a FILE pointer. */
 /* Makes a clean string (with wordnet) with a review in it, and calls the other functions with each individual word. */
 void make_roots_array(char caseFileName[], root roots[], root roots2[], int *sizeOfRootsArray, int *sizeOfRootsArray2) {
-    FILE *nounLib = fopen("noun_lib.dat", "r"),
+    FILE *nounLib = fopen("noun_lib.txt", "r"),
          *nounExceptions = fopen("noun_exc.txt", "r"),
          *caseFile = fopen(caseFileName, "r"),
          *caseFileClean = fopen("clean_review.txt", "w+");
@@ -218,7 +218,7 @@ void cleanReview(FILE *caseFile, FILE *caseFileClean) {
 int is_noun(FILE *nounLib, FILE *nounExceptions, char *word, fpos_t *posNoun, fpos_t *posExc) {
     int is_noun = 0;
     char tempNoun[25];
-    char tempAll[48]; //longest line in noun_exc.dat is 46 characters + '\n' (line 1003)
+    char tempAll[48]; //longest line in noun_exc.txt is 46 characters + '\n' (line 1003)
     char tempSingular[25]; //longest word is 23 letters (line 1003)
     char tempPlural[25];
     //fgetpos(nounLib, &posNoun);
