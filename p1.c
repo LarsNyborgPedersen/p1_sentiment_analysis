@@ -38,7 +38,7 @@ void find_representatives(root roots[], int numberOfRoots, FILE *synLib);
 int syn_in_array(char synonym[], root roots[], int numberOfRoots);
 void find_root(char *root, FILE *file);
 void make_clusters(root *clusters[][SYN_ARRAY_SIZE], root *EndOfCluster, int *sizeOfClustersArray, root roots[], int sizeOfRootsArray, FILE *synLib);
-int find_biggest_line(char *rootName, root roots[], int sizeOfRootsArray, FILE *synLib);
+int find_biggest_line(root roots[], int sizeOfRootsArray, FILE *synLib);
 int compare_clusters(const void *p1, const void *p2);
 int find_cluster_size (root *cluster[]);
 void print_clusters(root *clusters[][SYN_ARRAY_SIZE], int sizeOfClustersArray);
@@ -53,6 +53,7 @@ int main(void) {
 	root EndOfCluster = {"*EOC*", FALSE, FALSE, FALSE};
     int sizeOfRootsArray,
         sizeOfClustersArray;
+    int i;
     clock_t start, end;
     double cpu_time_used;
 	FILE *synLib = fopen("syn_lib.txt", "r");
@@ -74,13 +75,14 @@ int main(void) {
         qsort(roots, sizeOfRootsArray, sizeof(root), compare);
 
         find_representatives(roots, sizeOfRootsArray, synLib);
-
+        
         make_clusters(clusters, &EndOfCluster, &sizeOfClustersArray, roots, sizeOfRootsArray, synLib);
-
+        
         qsort(clusters, sizeOfClustersArray, sizeof(clusters[0]), compare_clusters);
-
+        for (i = 0; i < sizeOfRootsArray; i++) {
+            printf("word: %s\n", roots[i].rootName);
+        }
         print_clusters2(clusters, sizeOfClustersArray);
-
 	}
 	else {
 		printf("synLib failed to load. Bye bye.\n");
@@ -118,7 +120,6 @@ void clean_review_and_make_roots_array(char caseFileName[], root roots[], int *s
          *caseFileClean = fopen("clean_review.txt", "w+");
     root rootsTemp[ROOTS_ARRAY_SIZE];
     fpos_t posNoun, posExc;
-    int i;
     int sizeOfRootsArrayTemp = 0;
         *sizeOfRootsArray = 0;
 
@@ -445,7 +446,7 @@ void make_clusters(root *clusters[][SYN_ARRAY_SIZE], root *EndOfCluster, int *si
             */
 
             /* Returnerer linjetal af største synonymlinje. */
-            biggestLineN = find_biggest_line(roots[i].rootName, roots, sizeOfRootsArray, synLib);
+            biggestLineN = find_biggest_line(roots, sizeOfRootsArray, synLib);
 
             /*Hvis biggest line er lig 0, så er der ingen synonymlinjer*/
             if (biggestLineN != 0) {
@@ -466,8 +467,6 @@ void make_clusters(root *clusters[][SYN_ARRAY_SIZE], root *EndOfCluster, int *si
                     /*Tjekker om ordet er i vores synonym array*/
                     synIndex = syn_in_array(synonym, roots, sizeOfRootsArray);
 
-                
-
                     /*Hvis det er, så tilføjer vi det til vores cluster*/
                     if (synIndex != FALSE) {
                         clusters[clusterIndex][membersIndex++] = &roots[synIndex];
@@ -484,7 +483,7 @@ void make_clusters(root *clusters[][SYN_ARRAY_SIZE], root *EndOfCluster, int *si
     *sizeOfClustersArray = clusterIndex;
 }
 
-int find_biggest_line(char *rootName, root roots[], int sizeOfRootsArray, FILE *synLib) {
+int find_biggest_line(root roots[], int sizeOfRootsArray, FILE *synLib) {
 
     int currentBiggestSum = 0, tempSum = 0, biggestLineNr = 0, i = 0, j = 0, synIndex = 0, currentLineNr = 0;
     char synonymLine[LINE_SIZE], synonym[WORD_SIZE];
