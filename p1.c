@@ -25,8 +25,8 @@ void choose_case(char caseFileName[]);
 void make_roots_array(char caseFileName[], root roots[], int *sizeOfRootsArray);
 void clean_review(FILE *caseFileDirty, FILE *caseFileClean);
 int is_noun(FILE *nounLib, FILE *nounExceptions, char *word, fpos_t *posNoun, fpos_t *posExc);
-int found_in_lib(char word[], FILE *lib);
-int found_in_lib_exc(char word[], FILE *lib);
+int found_in_lib(char word[], FILE *lib, fpos_t *pos);
+int found_in_lib_exc(char word[], FILE *lib, fpos_t *pos);
 void convert_to_singular(char *word);
 void find_root(char *root, FILE *library);
 int index_of_existing_word(char *word, root roots[], int sizeOfRootsArray);
@@ -125,8 +125,7 @@ void make_roots_array(char caseFileName[], root roots[], int *sizeOfRootsArray) 
 
 
     
-    fgetpos(nounLib, &posNoun);
-    fgetpos(nounExceptions, &posExc);
+    
     /* caseFileDirty = fopen("test.txt", "r");           til debugging*/
 
     if (caseFileClean != NULL) {
@@ -155,6 +154,19 @@ void make_roots_array(char caseFileName[], root roots[], int *sizeOfRootsArray) 
         }
 
         qsort(rootsTemp, sizeOfRootsArrayTemp, sizeof(root), compareLALA);
+
+        rewind(nounLib);
+        rewind(nounExceptions);
+        fgetpos(nounLib, &posNoun);
+        fgetpos(nounExceptions, &posExc);
+
+        for (i = 0; i < sizeOfRootsArrayTemp; i++) {
+
+
+
+
+            printf("word: %s\n", rootsTemp[i].rootName);
+        }
 
 
         for (i = 0; i < sizeOfRootsArrayTemp; i++) {
@@ -215,37 +227,41 @@ void clean_review(FILE *caseFileDirty, FILE *caseFileClean) {
 int is_noun(FILE *nounLib, FILE *nounExceptions, char word[], fpos_t *posNoun, fpos_t *posExc) {
     int isNoun = 0;
     
-    if (found_in_lib(word, nounLib)) {
-        isNoun = found_in_lib(word, nounLib);
+    if (found_in_lib(word, nounLib, posNoun)) {
+        isNoun = 1;
     }
-    else if(found_in_lib_exc(word, nounExceptions)) {
-        isNoun = found_in_lib_exc(word, nounExceptions);
+    else if (found_in_lib_exc(word, nounExceptions, posExc)) {
+        isNoun = 1;
     }
     else {
         convert_to_singular(word);
-        if (found_in_lib(word, nounLib)) {
-            isNoun = found_in_lib(word, nounLib);
+        if (found_in_lib(word, nounLib, posNoun)) {
+            isNoun = 1;
         }
         else {
             strcpy(&word[strlen(word)], "e");
-            if (found_in_lib(word, nounLib)) {
-                isNoun = found_in_lib(word, nounLib);
+            fseek(nounLib, -100, SEEK_CUR);
+            if (found_in_lib(word, nounLib, posNoun)) {
+                isNoun = 1;
             }
         }
     }
     return isNoun;
 }
 
-int found_in_lib(char word[], FILE *lib) {
-    char tempNoun[30];
+int found_in_lib(char word[], FILE *lib, fpos_t *pos) {
+    char tempNoun[100];
     int isNoun = 0;
 
-    rewind(lib);
+    fsetpos(lib, pos);
+
     while (!feof(lib)) {
-        fgets(tempNoun, 30, lib);
+        fgets(tempNoun, 100, lib);
         tempNoun[strlen(tempNoun) - 1] = '\0';
+        
         if (strcmp(word, tempNoun) == 0) {
-            /* fseek(lib, -(strlen(tempNoun) + 2), SEEK_CUR); */
+            fseek(lib, -(strlen(tempNoun) + 2), SEEK_CUR);
+            fgetpos(lib, pos);
             isNoun = 1;
             return isNoun;
         }
@@ -253,15 +269,15 @@ int found_in_lib(char word[], FILE *lib) {
     return isNoun;
 }
 
-int found_in_lib_exc(char word[], FILE *lib) {
+int found_in_lib_exc(char word[], FILE *lib, fpos_t *pos) {
     int isNoun = 0;
-    char tempNouns[48];  /* longest line in noun_exc.txt is 46 characters + '\n' (line 1003) */
-    char tempSingular[25]; /* longest word is 23 letters (line 1003) */
-    char tempPlural[25];
+    char tempNouns[100];  /* longest line in noun_exc.txt is 46 characters + '\n' (line 1003)...... no the longest line is 69 in lenght */
+    char tempSingular[100]; /* longest word is 23 letters (line 1003) */
+    char tempPlural[100];
 
     rewind(lib);
     while (!feof(lib)) {
-        fgets(tempNouns, 48, lib);
+        fgets(tempNouns, 100, lib);
         sscanf(tempNouns, "%s %s", tempPlural, tempSingular);
         if (strcmp(word, tempPlural) == 0) {
             /* fseek(lib, -(strlen(tempNouns) + 1), SEEK_CUR); */
@@ -276,7 +292,8 @@ int found_in_lib_exc(char word[], FILE *lib) {
 void convert_to_singular(char *word) {
     /* Make word singular (if it wasn't an exceptions to normal noun rules)
      * if end of word = "ches" make it = "ch" */
-    printf("word before: %s\n", word);
+    
+    /* printf("word before: %s\n", word); */
 
 
     if (strcmp(&word[strlen(word) - 4], "ches") == 0) {
@@ -310,7 +327,7 @@ void convert_to_singular(char *word) {
     else if (strcmp(&word[strlen(word) - 1], "s") == 0) {
         word[strlen(word) - 1] = '\0'; 
     }
-    printf("word after: %s\n", word);
+    /* printf("word after: %s\n", word); */
 }
 
 int index_of_existing_word(char *word, root roots[], int sizeOfRootsArray) {
