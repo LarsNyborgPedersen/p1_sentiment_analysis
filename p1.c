@@ -9,15 +9,15 @@
 #define WORD_SIZE 100
 #define SYN_ARRAY_SIZE 32
 #define LINE_SIZE 5000
-#define ROOTS_ARRAY_SIZE 10000
+#define ROOTS_ARRAY_SIZE 5000
 #define CLUSTERS_SIZE 400
 #define FALSE -1
 #define TRUE 1
 
 typedef struct  {
-	char rootName[WORD_SIZE];
-	int count;
-	int isRepresentative;
+    char rootName[WORD_SIZE];
+    int count;
+    int isRepresentative;
     int clusterCount;
 } root;
 
@@ -44,25 +44,26 @@ void print_clusters2(root *clusters[][SYN_ARRAY_SIZE], int sizeOfClustersArray);
 
 
 int main(void) {
-	root roots[ROOTS_ARRAY_SIZE];
-	root *clusters[CLUSTERS_SIZE][SYN_ARRAY_SIZE];
-	root EndOfCluster = {"*EOC*", FALSE, FALSE, FALSE};
+    root roots[ROOTS_ARRAY_SIZE];
+    root *clusters[CLUSTERS_SIZE][SYN_ARRAY_SIZE];
+    root EndOfCluster = {"*EOC*", FALSE, FALSE, FALSE};
     int sizeOfRootsArray,
         sizeOfClustersArray;
     clock_t start, end;
     double cpu_time_used;
-	FILE *synLib = fopen("syn_lib.txt", "r");
+    FILE *synLib = fopen("syn_lib.txt", "r");
 
-	char caseFileName[WORD_SIZE];
-	choose_case(caseFileName);
+    char caseFileName[WORD_SIZE];
+    choose_case(caseFileName);
     
     
-	
     /*  Checking if the files has been opened */
-	if (synLib != NULL) {
+    if (synLib != NULL) {
 
         start = clock();
-		make_roots_array(caseFileName, roots, &sizeOfRootsArray);
+
+        make_roots_array(caseFileName, roots, &sizeOfRootsArray);
+
         end = clock();
         cpu_time_used = ((double)(end - start) / CLOCKS_PER_SEC);
         printf("make_roots_arry uses %lf seconds\n", cpu_time_used);
@@ -77,28 +78,28 @@ int main(void) {
 
         print_clusters2(clusters, sizeOfClustersArray);
 
-	}
-	else {
-		printf("synLib failed to load. Bye bye.\n");
+    }
+    else {
+        printf("synLib failed to load. Bye bye.\n");
         exit(EXIT_FAILURE);
-	}
+    }
 
-	return 0;
+    return 0;
 }
 /*  The user chooses a number, and then a specific string with the name of the file is returned with output parameter */
 void choose_case(char caseFileName[]) {
     int caseNumber;
 
     printf("Please write the number of which case you want. \n Shirt: 1 \n Toothbrush: 2 \n test: 3\n Choose a case:  ");
-	scanf("%d", &caseNumber);
+    scanf("%d", &caseNumber);
 
     switch (caseNumber) {
         case 1: 
-        	strcpy(caseFileName, "shirt.txt");
-        	break;
+            strcpy(caseFileName, "shirt.txt");
+            break;
         case 2: 
-        	strcpy(caseFileName, "tooth.txt");
-        	break;
+            strcpy(caseFileName, "tooth.txt");
+            break;
         case 3:
             strcpy(caseFileName, "test.txt");
             break;
@@ -121,11 +122,14 @@ void make_roots_array(char caseFileName[], root roots[], int *sizeOfRootsArray) 
     int sizeOfRootsArrayTemp = 0;
         *sizeOfRootsArray = 0;
 
+                printf("HEJSA\n");
 
     
     fgetpos(nounLib, &posNoun);
     fgetpos(nounExceptions, &posExc);
     /* caseFileDirty = fopen("test.txt", "r");           til debugging*/
+
+
 
     if (caseFileClean != NULL) {
 
@@ -156,11 +160,11 @@ void make_roots_array(char caseFileName[], root roots[], int *sizeOfRootsArray) 
 
 
         for (i = 0; i < sizeOfRootsArrayTemp; i++) {
-        	if (is_noun(nounLib, nounExceptions, rootsTemp[i].rootName, &posNoun, &posExc)) {
+            if (is_noun(nounLib, nounExceptions, rootsTemp[i].rootName, &posNoun, &posExc)) {
                 indexExistingWord = index_of_existing_word(rootsTemp[i].rootName, roots, *sizeOfRootsArray);
 
                 if (indexExistingWord == FALSE) {
-                	/* printf("%s FALSE!!!\n", roots[i].rootName); */
+                    /* printf("%s FALSE!!!\n", roots[i].rootName); */
 
                     strcpy(roots[*sizeOfRootsArray].rootName, rootsTemp[i].rootName);
                     roots[*sizeOfRootsArray].count = rootsTemp[i].count;
@@ -168,7 +172,7 @@ void make_roots_array(char caseFileName[], root roots[], int *sizeOfRootsArray) 
                     (*sizeOfRootsArray)++;
                 }
                 else {
-                	/* printf("%s TRUE!!!\n", roots[i].rootName); */
+                    /* printf("%s TRUE!!!\n", roots[i].rootName); */
                     roots[indexExistingWord].count += rootsTemp[i].count; 
 
 
