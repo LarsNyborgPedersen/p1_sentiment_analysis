@@ -1,0 +1,24 @@
+Shirt:
+shirt - ok
+fit - ok - slettet way som synonym da det er falsk positiv
+size - ok
+medium - ok
+top - ikke ok. den har mange synonymer men kunne ikke finde de sidste 2 nævninger
+fabric - ok
+lb - ok
+model - ok. "kind" skal måske slettes som synonym
+order - ikke helt ok pga "ordering", men antal "order" er ok. skal måske slettes da det bruges som verbum i teksten
+bit - ok - skal måske fjernes
+
+Toothbrush:
+pro - ok
+minute - ok
+brush - ok
+battery - ok
+head - ikke ok. 14 i programmet og 11 i teksten. Skal måske fjernes pga "heads up"
+charge - ok. Skal måske fjernes pga tvetydighed
+day - ok
+life - ikke ok. 10 i programmet og 5 i teksten.
+pulsation - ok
+indicator - ok
+
