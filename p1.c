@@ -15,9 +15,9 @@
 #define TRUE 1
 
 typedef struct  {
-    char rootName[WORD_SIZE];
-    int count;
-    int isRepresentative;
+	char rootName[WORD_SIZE];
+	int count;
+	int isRepresentative;
     int clusterCount;
 } root;
 
@@ -25,7 +25,9 @@ void choose_case(char caseFileName[]);
 void make_roots_array(char caseFileName[], root roots[], int *sizeOfRootsArray);
 void clean_review(FILE *caseFileDirty, FILE *caseFileClean);
 int is_noun(FILE *nounLib, FILE *nounExceptions, char *word, fpos_t *posNoun, fpos_t *posExc);
-/* char *convert_to_singular(char *word); */
+int found_in_lib(char word[], FILE *lib);
+int found_in_lib_exc(char word[], FILE *lib);
+void convert_to_singular(char *word);
 void find_root(char *root, FILE *library);
 int index_of_existing_word(char *word, root roots[], int sizeOfRootsArray);
 int compareLALA(const void *p1, const void *p2);
@@ -44,26 +46,25 @@ void print_clusters2(root *clusters[][SYN_ARRAY_SIZE], int sizeOfClustersArray);
 
 
 int main(void) {
-    root roots[ROOTS_ARRAY_SIZE];
-    root *clusters[CLUSTERS_SIZE][SYN_ARRAY_SIZE];
-    root EndOfCluster = {"*EOC*", FALSE, FALSE, FALSE};
+	root roots[ROOTS_ARRAY_SIZE];
+	root *clusters[CLUSTERS_SIZE][SYN_ARRAY_SIZE];
+	root EndOfCluster = {"*EOC*", FALSE, FALSE, FALSE};
     int sizeOfRootsArray,
         sizeOfClustersArray;
     clock_t start, end;
     double cpu_time_used;
-    FILE *synLib = fopen("syn_lib.txt", "r");
+	FILE *synLib = fopen("syn_lib.txt", "r");
 
-    char caseFileName[WORD_SIZE];
-    choose_case(caseFileName);
+	char caseFileName[WORD_SIZE];
+	choose_case(caseFileName);
     
     
+	
     /*  Checking if the files has been opened */
-    if (synLib != NULL) {
+	if (synLib != NULL) {
 
         start = clock();
-
-        make_roots_array(caseFileName, roots, &sizeOfRootsArray);
-
+		make_roots_array(caseFileName, roots, &sizeOfRootsArray);
         end = clock();
         cpu_time_used = ((double)(end - start) / CLOCKS_PER_SEC);
         printf("make_roots_arry uses %lf seconds\n", cpu_time_used);
@@ -78,28 +79,28 @@ int main(void) {
 
         print_clusters2(clusters, sizeOfClustersArray);
 
-    }
-    else {
-        printf("synLib failed to load. Bye bye.\n");
+	}
+	else {
+		printf("synLib failed to load. Bye bye.\n");
         exit(EXIT_FAILURE);
-    }
+	}
 
-    return 0;
+	return 0;
 }
 /*  The user chooses a number, and then a specific string with the name of the file is returned with output parameter */
 void choose_case(char caseFileName[]) {
     int caseNumber;
 
     printf("Please write the number of which case you want. \n Shirt: 1 \n Toothbrush: 2 \n test: 3\n Choose a case:  ");
-    scanf("%d", &caseNumber);
+	scanf("%d", &caseNumber);
 
     switch (caseNumber) {
         case 1: 
-            strcpy(caseFileName, "shirt.txt");
-            break;
+        	strcpy(caseFileName, "shirt.txt");
+        	break;
         case 2: 
-            strcpy(caseFileName, "tooth.txt");
-            break;
+        	strcpy(caseFileName, "tooth.txt");
+        	break;
         case 3:
             strcpy(caseFileName, "test.txt");
             break;
@@ -122,14 +123,11 @@ void make_roots_array(char caseFileName[], root roots[], int *sizeOfRootsArray) 
     int sizeOfRootsArrayTemp = 0;
         *sizeOfRootsArray = 0;
 
-                printf("HEJSA\n");
 
     
     fgetpos(nounLib, &posNoun);
     fgetpos(nounExceptions, &posExc);
     /* caseFileDirty = fopen("test.txt", "r");           til debugging*/
-
-
 
     if (caseFileClean != NULL) {
 
@@ -160,11 +158,11 @@ void make_roots_array(char caseFileName[], root roots[], int *sizeOfRootsArray) 
 
 
         for (i = 0; i < sizeOfRootsArrayTemp; i++) {
-            if (is_noun(nounLib, nounExceptions, rootsTemp[i].rootName, &posNoun, &posExc)) {
+        	if (is_noun(nounLib, nounExceptions, rootsTemp[i].rootName, &posNoun, &posExc)) {
                 indexExistingWord = index_of_existing_word(rootsTemp[i].rootName, roots, *sizeOfRootsArray);
 
                 if (indexExistingWord == FALSE) {
-                    /* printf("%s FALSE!!!\n", roots[i].rootName); */
+                	/* printf("%s FALSE!!!\n", roots[i].rootName); */
 
                     strcpy(roots[*sizeOfRootsArray].rootName, rootsTemp[i].rootName);
                     roots[*sizeOfRootsArray].count = rootsTemp[i].count;
@@ -172,7 +170,7 @@ void make_roots_array(char caseFileName[], root roots[], int *sizeOfRootsArray) 
                     (*sizeOfRootsArray)++;
                 }
                 else {
-                    /* printf("%s TRUE!!!\n", roots[i].rootName); */
+                	/* printf("%s TRUE!!!\n", roots[i].rootName); */
                     roots[indexExistingWord].count += rootsTemp[i].count; 
 
 
@@ -189,6 +187,7 @@ void make_roots_array(char caseFileName[], root roots[], int *sizeOfRootsArray) 
 
         fclose(nounLib);
         fclose(caseFileClean);
+
     }
     else {
         printf("caseFileClean failed to load. Bye bye.\n");
@@ -211,53 +210,75 @@ void clean_review(FILE *caseFileDirty, FILE *caseFileClean) {
 }
 
 
+
 /* Checks whether the word is a noun */
 int is_noun(FILE *nounLib, FILE *nounExceptions, char word[], fpos_t *posNoun, fpos_t *posExc) {
-    int is_noun = 0;
-    char tempNoun[25];
-    char tempAll[48]; /* longest line in noun_exc.txt is 46 characters + '\n' (line 1003) */
+    int isNoun = 0;
+    
+    if (found_in_lib(word, nounLib)) {
+        isNoun = found_in_lib(word, nounLib);
+    }
+    else if(found_in_lib_exc(word, nounExceptions)) {
+        isNoun = found_in_lib_exc(word, nounExceptions);
+    }
+    else {
+        convert_to_singular(word);
+        if (found_in_lib(word, nounLib)) {
+            isNoun = found_in_lib(word, nounLib);
+        }
+        else {
+            strcpy(&word[strlen(word)], "e");
+            if (found_in_lib(word, nounLib)) {
+                isNoun = found_in_lib(word, nounLib);
+            }
+        }
+    }
+    return isNoun;
+}
+
+int found_in_lib(char word[], FILE *lib) {
+    char tempNoun[30];
+    int isNoun = 0;
+
+    rewind(lib);
+    while (!feof(lib)) {
+        fgets(tempNoun, 30, lib);
+        tempNoun[strlen(tempNoun) - 1] = '\0';
+        if (strcmp(word, tempNoun) == 0) {
+            /* fseek(lib, -(strlen(tempNoun) + 2), SEEK_CUR); */
+            isNoun = 1;
+            return isNoun;
+        }
+    }
+    return isNoun;
+}
+
+int found_in_lib_exc(char word[], FILE *lib) {
+    int isNoun = 0;
+    char tempNouns[48];  /* longest line in noun_exc.txt is 46 characters + '\n' (line 1003) */
     char tempSingular[25]; /* longest word is 23 letters (line 1003) */
     char tempPlural[25];
-    /* fgetpos(nounLib, &posNoun); */
-    /* Check if word is in nounLib (singular nouns) */
-    /* rewindLine(nounLib); */
 
-    rewind(nounLib);
-    while (!feof(nounLib)) {
-        fgets(tempNoun, 30, nounLib);
-        /* sscanf(tempNoun2, "%[^\n]", tempNoun); */
-        tempNoun[strlen(tempNoun) - 1] = '\0';
-        /*    printf("%d\n", strcmp(word, tempNoun)); */
-        if (strcmp(word, tempNoun) == 0) {
-            /*fseek(nounLib, -(strlen(tempNoun) + 2), SEEK_CUR);*/
-            /*printf("Word was found in nounLib first time\n"); */
-            is_noun = 1;
-            /* printf("1 %d\n", is_noun); */
-            return is_noun;
-        }
-    }
-
-    /* printf("HEY HEY HEY HYE\n"); 
-     * fgetpos(nounExceptions, &posExc);
-     * Check if word is in nounExceptions, and if it is, make it singular
-     * rewindLine(nounExceptions); 
-     */
-    rewind(nounExceptions);
-    while (!feof(nounExceptions)) {
-        fgets(tempAll, 48, nounExceptions);
-        sscanf(tempAll, "%s %s", tempPlural, tempSingular);
-        /* printf("%s %s %s\n", tempAll, tempSingular, tempPlural); */
+    rewind(lib);
+    while (!feof(lib)) {
+        fgets(tempNouns, 48, lib);
+        sscanf(tempNouns, "%s %s", tempPlural, tempSingular);
         if (strcmp(word, tempPlural) == 0) {
-            /* fseek(nounExceptions, -(strlen(tempAll) + 1), SEEK_CUR); */
-            /* printf("Word was found in exceptions list!\n"); */
+            /* fseek(lib, -(strlen(tempNouns) + 1), SEEK_CUR); */
             strcpy(word, tempSingular);
-            is_noun = 1;
-            /* printf("2 %d\n", is_noun); */
-            return is_noun;
+            isNoun = 1;
+            return isNoun;
         }
     }
+    return isNoun;
+}
+
+void convert_to_singular(char *word) {
     /* Make word singular (if it wasn't an exceptions to normal noun rules)
      * if end of word = "ches" make it = "ch" */
+    printf("word before: %s\n", word);
+
+
     if (strcmp(&word[strlen(word) - 4], "ches") == 0) {
         strcpy(&word[strlen(word) - 4], "ch");
     }
@@ -289,42 +310,7 @@ int is_noun(FILE *nounLib, FILE *nounExceptions, char word[], fpos_t *posNoun, f
     else if (strcmp(&word[strlen(word) - 1], "s") == 0) {
         word[strlen(word) - 1] = '\0'; 
     }
-
-
-    /* Check if word is in nounLib (singular nouns) */
-    rewind(nounLib);
-    /* rewindLine(nounLib); */
-    while (!feof(nounLib)) {
-        fgets(tempNoun, 30, nounLib);
-        tempNoun[strlen(tempNoun) - 1] = 0;
-        if (strcmp(word, tempNoun) == 0) {
-            /* fseek(nounLib, -(strlen(tempNoun) + 2), SEEK_CUR); */
-            /* printf("Word was found in nounLib second time\n"); */
-            is_noun = 1;
-            /* printf("3 %d\n", is_noun); */
-            return is_noun;
-        }
-    }
-
-    
-    strcpy(&word[strlen(word)], "e");
-    rewind(nounLib);
-    /* rewindLine(nounLib); */ 
-    while (!feof(nounLib)) {
-        fgets(tempNoun, 30, nounLib);
-        tempNoun[strlen(tempNoun) - 1] = 0;
-        if (strcmp(word, tempNoun) == 0) {
-            /* fseek(nounLib, -(strlen(tempNoun) + 2), SEEK_CUR); */
-            /* printf("Word was found in nounLib third time\n"); */
-            is_noun = 1;
-            /* printf("4 %d\n", is_noun); */
-            return is_noun;
-        }
-    }
-    /* printf("Word was not found in any file\n"); */
-    is_noun = 0;
-    /* printf("5 %d\n", is_noun); */
-    return is_noun;
+    printf("word after: %s\n", word);
 }
 
 int index_of_existing_word(char *word, root roots[], int sizeOfRootsArray) {
