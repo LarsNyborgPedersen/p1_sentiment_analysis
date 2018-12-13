@@ -10,7 +10,7 @@
 #define SYN_ARRAY_SIZE 32
 #define LINE_SIZE 5000
 #define ROOTS_ARRAY_SIZE 5000
-#define CLUSTERS_SIZE 400
+#define CLUSTERS_SIZE 5000
 #define FALSE -1
 #define TRUE 1
 
@@ -75,13 +75,17 @@ int main(void) {
         qsort(roots, sizeOfRootsArray, sizeof(root), compare);
 
         find_representatives(roots, sizeOfRootsArray, synLib);
+
         
+
         make_clusters(clusters, &EndOfCluster, &sizeOfClustersArray, roots, sizeOfRootsArray, synLib);
         
         qsort(clusters, sizeOfClustersArray, sizeof(clusters[0]), compare_clusters);
+
         for (i = 0; i < sizeOfRootsArray; i++) {
             printf("word: %s\n", roots[i].rootName);
         }
+
         print_clusters2(clusters, sizeOfClustersArray);
 	}
 	else {
@@ -568,4 +572,5 @@ void print_clusters2(root *clusters[][SYN_ARRAY_SIZE], int sizeOfClustersArray) 
         fprintf(fp,"%s;%d\n", clusters[i][0]->rootName, clusters[i][0]->clusterCount);
         printf("navn: %s. hyppighed: %d\n", clusters[i][0]->rootName, clusters[i][0]->clusterCount);
     }
+    printf("sizeOfClustersArray %d\n", sizeOfClustersArray);
 }
