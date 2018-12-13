@@ -127,8 +127,8 @@ void choose_case(char caseFileName[], int *linesToBeAnalyzed) {
 void clean_review_and_make_roots_array(char caseFileName[], root roots[], int *sizeOfRootsArray, int linesToBeAnalyzed) {
     FILE *nounLib = fopen("noun_lib.txt", "r"),
          *nounExceptions = fopen("noun_exc.txt", "r"),
-         *caseFileDirty = fopen("caseFileDirty.txt", "w+"),
-         *caseFileClean = fopen("clean_review.txt", "w+");
+         *caseFileDirty = fopen("caseFileDirty.txt", "w"),
+         *caseFileClean = fopen("clean_review.txt", "w");
     root rootsTemp[ROOTS_ARRAY_SIZE];
     fpos_t posNoun, posExc;
     int sizeOfRootsArrayTemp = 0;
@@ -155,6 +155,7 @@ void clean_review_and_make_roots_array(char caseFileName[], root roots[], int *s
 
         fclose(nounLib);
         fclose(caseFileClean);
+
     }
     else {
         printf("caseFileClean failed to load. Bye bye.\n");
@@ -163,17 +164,26 @@ void clean_review_and_make_roots_array(char caseFileName[], root roots[], int *s
 }
 
 void get_reviews_from_file (char caseFileName[], FILE *caseFileDirty, int linesToBeAnalyzed) {
+    char reviewLineTemp[LINE_SIZE];
     char reviewLine[LINE_SIZE];
     FILE *caseFile = fopen(caseFileName, "r");
     int i;
 
-    for (i = 0; i < linesToBeAnalyzed; ++i){
+    for (i = 0; i < linesToBeAnalyzed; ++i) {
+        fgets(reviewLineTemp, LINE_SIZE, caseFile);
         /* fscanf(caseFile, "%[^\[]") */
-        fscanf(caseFile, "%*s %*s %*s %*s %*s %*[^0-9] %*d, %*d], %*s \"%[^\"]\" %*[^\n]\n", reviewLine);
-        rewind(caseFileDirty);
-        printf("%s\n", reviewLine);
+        sscanf(reviewLineTemp, "%*s %*s %*s %*s %*s %*[^,] %*[^0-9] %*d, %*d], %*s \"%[^\"]", reviewLine); 
+        /* sscanf(reviewLineTemp, "%*s %*s %*s %*s %*s %*[^0-9] %*d, %*d], %*s \"%[^\"]", reviewLine); */
+
+        /* sscanf(reviewLineTemp, "%*s %*s %*s %*s %*s %*[^0-9] %*d, %*d], %*s \"%[^\"]\" %*[^\n]\n", reviewLine); */
+
+        /* sscanf(reviewLineTemp, "%*[^[] %*[^:] \"%[^\"] %*[^\n]\n", reviewLine); */
+         printf("%s\n", reviewLine);
         fprintf(caseFileDirty, "%s\n", reviewLine);
     }
+    fclose(caseFileDirty);
+    fclose(caseFile);
+    caseFileDirty = fopen("caseFileDirty.txt", "r");
 }
 
 void clean_review(FILE *caseFileDirty, FILE *caseFileClean) {
@@ -181,12 +191,17 @@ void clean_review(FILE *caseFileDirty, FILE *caseFileClean) {
 
     while (!feof(caseFileDirty)) {
         currentChar = fgetc(caseFileDirty);
+        if (isupper(currentChar)) {
+            currentChar = tolower(currentChar);
+        }
 
         if (isalpha(currentChar) || currentChar == ' ' || currentChar == '\n') {
             fputc(currentChar, caseFileClean);
         }
     }
-    rewind(caseFileClean);
+    fclose(caseFileClean);
+    caseFileClean = fopen("clean_review.txt", "r");
+    fclose(caseFileDirty);
 }
 
 void scan_words_into_temp_array(FILE *caseFileClean, root rootsTemp[], int *sizeOfRootsArrayTemp) {
@@ -248,12 +263,6 @@ int is_noun(FILE *nounLib, FILE *nounExceptions, char word[], fpos_t *posNoun, f
         convert_to_singular(word);
         if (found_in_lib(word, nounLib, posNoun)) {
             isNoun = 1;
-        }
-        else {
-            strcpy(&word[strlen(word)], "e");
-            if (found_in_lib(word, nounLib, posNoun)) {
-                isNoun = 1;
-            }
         }
     }
     return isNoun;
