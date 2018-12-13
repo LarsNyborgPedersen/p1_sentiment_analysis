@@ -8,7 +8,7 @@
 #include <time.h>
 #define WORD_SIZE 100
 #define SYN_ARRAY_SIZE 32
-#define LINE_SIZE 5000
+#define LINE_SIZE 15000
 #define ROOTS_ARRAY_SIZE 5000
 #define CLUSTERS_SIZE 5000
 #define FALSE -1
@@ -21,8 +21,9 @@ typedef struct  {
     int clusterCount;
 } root;
 
-void choose_case(char caseFileName[]); 
-void clean_review_and_make_roots_array(char caseFileName[], root roots[], int *sizeOfRootsArray);
+void choose_case(char caseFileName[], int *linesToBeAnalyzed);
+void clean_review_and_make_roots_array(char caseFileName[], root roots[], int *sizeOfRootsArray, int linesToBeAnalyzed);
+void get_reviews_from_file (char caseFileName[], FILE *caseFileDirty, int linesToBeAnalyzed);
 void clean_review(FILE *caseFileDirty, FILE *caseFileClean);
 void scan_words_into_temp_array(FILE *caseFileClean, root rootsTemp[], int *sizeOfRootsArrayTemp);
 void make_roots_array( root roots[], int *sizeOfRootsArray, root rootsTemp[], int sizeOfRootsArrayTemp, FILE *nounLib, FILE *nounExceptions, fpos_t *posNoun, fpos_t *posExc);
@@ -54,12 +55,13 @@ int main(void) {
     int sizeOfRootsArray,
         sizeOfClustersArray;
     int i;
+    int linesToBeAnalyzed = 0;
     clock_t start, end;
     double cpu_time_used;
 	FILE *synLib = fopen("syn_lib.txt", "r");
 
 	char caseFileName[WORD_SIZE];
-	choose_case(caseFileName);
+	choose_case(caseFileName, &linesToBeAnalyzed);
     
     
 	
@@ -67,7 +69,7 @@ int main(void) {
 	if (synLib != NULL) {
 
         start = clock();
-		clean_review_and_make_roots_array(caseFileName, roots, &sizeOfRootsArray);
+		clean_review_and_make_roots_array(caseFileName, roots, &sizeOfRootsArray, linesToBeAnalyzed);
         end = clock();
         cpu_time_used = ((double)(end - start) / CLOCKS_PER_SEC);
         printf("make_roots_arry uses %lf seconds\n", cpu_time_used);
@@ -96,11 +98,13 @@ int main(void) {
 	return 0;
 }
 /*  The user chooses a number, and then a specific string with the name of the file is returned with output parameter */
-void choose_case(char caseFileName[]) {
+void choose_case(char caseFileName[], int *linesToBeAnalyzed) {
     int caseNumber;
 
-    printf("Please write the number of which case you want. \n Shirt: 1 \n Toothbrush: 2 \n test: 3\n Choose a case:  ");
+    printf("Please write the number of which case you want. \n Shirt: 1 \n Toothbrush: 2 \n test: 3\n Amazon test: 4\n Choose a case:  ");
 	scanf("%d", &caseNumber);
+    printf("Please write the number of reviews you want to be analyzed: \n");
+    scanf("%d", linesToBeAnalyzed);
 
     switch (caseNumber) {
         case 1: 
@@ -112,15 +116,18 @@ void choose_case(char caseFileName[]) {
         case 3:
             strcpy(caseFileName, "test.txt");
             break;
+        case 4:
+            strcpy(caseFileName, "Amazon_Instant_Video_5.txt");
+            break;
     }
 }
 
 /* receives a FILE pointer. */
 /* Makes a clean string (with wordnet) with a review in it, and calls the other functions with each individual word. */
-void clean_review_and_make_roots_array(char caseFileName[], root roots[], int *sizeOfRootsArray) {
+void clean_review_and_make_roots_array(char caseFileName[], root roots[], int *sizeOfRootsArray, int linesToBeAnalyzed) {
     FILE *nounLib = fopen("noun_lib.txt", "r"),
          *nounExceptions = fopen("noun_exc.txt", "r"),
-         *caseFileDirty = fopen(caseFileName, "r"),
+         *caseFileDirty = fopen("caseFileDirty.txt", "w+"),
          *caseFileClean = fopen("clean_review.txt", "w+");
     root rootsTemp[ROOTS_ARRAY_SIZE];
     fpos_t posNoun, posExc;
@@ -128,6 +135,10 @@ void clean_review_and_make_roots_array(char caseFileName[], root roots[], int *s
         *sizeOfRootsArray = 0;
 
     if (caseFileClean != NULL) {
+        printf("HEJSA foer marni\n");
+
+        get_reviews_from_file(caseFileName, caseFileDirty, linesToBeAnalyzed);
+        printf("HEJSA efter marni\n");
 
         clean_review(caseFileDirty, caseFileClean);
 
@@ -151,6 +162,20 @@ void clean_review_and_make_roots_array(char caseFileName[], root roots[], int *s
     }
 }
 
+void get_reviews_from_file (char caseFileName[], FILE *caseFileDirty, int linesToBeAnalyzed) {
+    char reviewLine[LINE_SIZE];
+    FILE *caseFile = fopen(caseFileName, "r");
+    int i;
+
+    for (i = 0; i < linesToBeAnalyzed; ++i){
+        /* fscanf(caseFile, "%[^\[]") */
+        fscanf(caseFile, "%*s %*s %*s %*s %*s %*[^0-9] %*d, %*d], %*s \"%[^\"]\" %*[^\n]\n", reviewLine);
+        rewind(caseFileDirty);
+        printf("%s\n", reviewLine);
+        fprintf(caseFileDirty, "%s\n", reviewLine);
+    }
+}
+
 void clean_review(FILE *caseFileDirty, FILE *caseFileClean) {
     int currentChar;
 
@@ -161,7 +186,6 @@ void clean_review(FILE *caseFileDirty, FILE *caseFileClean) {
             fputc(currentChar, caseFileClean);
         }
     }
-    fclose(caseFileDirty);
     rewind(caseFileClean);
 }
 
@@ -227,7 +251,6 @@ int is_noun(FILE *nounLib, FILE *nounExceptions, char word[], fpos_t *posNoun, f
         }
         else {
             strcpy(&word[strlen(word)], "e");
-            fseek(nounLib, -100, SEEK_CUR);
             if (found_in_lib(word, nounLib, posNoun)) {
                 isNoun = 1;
             }
