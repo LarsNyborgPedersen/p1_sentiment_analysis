@@ -286,27 +286,27 @@ int is_noun(FILE *nounLib, FILE *nounExceptions, char word[], fpos_t *posNoun, f
     return isNoun;
 }
 
-int found_in_lib(char word[], FILE *lib, fpos_t *pos) {
+int found_in_lib(char word[], FILE *nounLib, fpos_t *pos) {
     char tempNoun[100];
 	char firstCharOfTempNoun,
         firstCharOfWord;
     int isNoun = 0;
 	firstCharOfWord = word[0];
 
-    fsetpos(lib, pos);
+    fsetpos(nounLib, pos);
 
     do {
-        fgets(tempNoun, 100, lib);
+        fgets(tempNoun, 100, nounLib);
         tempNoun[strlen(tempNoun) - 1] = '\0';
 		firstCharOfTempNoun = tempNoun[0];
 
         if (strcmp(word, tempNoun) == 0) {
-            fseek(lib, -(strlen(tempNoun) + 2), SEEK_CUR);
-            fgetpos(lib, pos);
+            fseek(nounLib, -(strlen(tempNoun) + 2), SEEK_CUR);
+            fgetpos(nounLib, pos);
             isNoun = 1;
             return isNoun;
         }
-    } while (!feof(lib) && firstCharOfTempNoun <= firstCharOfWord);
+    } while (!feof(nounLib) && firstCharOfTempNoun <= firstCharOfWord);
     return isNoun;
 }
 
@@ -440,7 +440,7 @@ int is_representative_and_not_end_of_line(root roots[], char synonymLine[], int 
 }
 
 void find_representatives(root roots[], int sizeOfRootsArray, FILE *synLib) {
-    int rootIndex = 0, j = 0, wordIndex = 0, synIndex = 0;
+    int rootIndex = 0, lineIndex = 0, wordIndex = 0, synIndex = 0;
     char synonym[WORD_SIZE], synonymLine[LINE_SIZE];
 
     for (rootIndex = 0; rootIndex < sizeOfRootsArray; rootIndex++) {
@@ -452,20 +452,20 @@ void find_representatives(root roots[], int sizeOfRootsArray, FILE *synLib) {
             roots[rootIndex].isRepresentative = 0;
             rewind(synLib); continue;
         }
-
+        /* Scan each synonymLine for the current root. */
         do {
             fgets(synonymLine, LINE_SIZE, synLib);
+            /* scan each word and see if it's count is bigger than the current root. */
+            for (lineIndex = 1, wordIndex = 0; roots[rootIndex].isRepresentative == TRUE && synonymLine[lineIndex] != '\n' && synonymLine[lineIndex] != '*'; lineIndex++, wordIndex = 0) {
 
-            for (j = 1, wordIndex = 0; roots[rootIndex].isRepresentative == TRUE && synonymLine[j] != '\n' && synonymLine[j] != '*'; j++, wordIndex = 0) {
-
-                synIndex = find_synonym_in_roots(synonymLine, synonym, &j, &wordIndex, roots, sizeOfRootsArray);
+                synIndex = find_synonym_in_roots(synonymLine, synonym, &lineIndex, &wordIndex, roots, sizeOfRootsArray);
 
                 if (synIndex != FALSE && roots[rootIndex].count < roots[synIndex].count) {
                     roots[rootIndex].isRepresentative = 0;
                 }
             }
 
-        } while (roots[rootIndex].isRepresentative == TRUE && synonymLine[j] != '*');
+        } while (roots[rootIndex].isRepresentative == TRUE && synonymLine[lineIndex] != '*');
     }
 
 }
