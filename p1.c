@@ -82,16 +82,12 @@ int main(void) {
 
 
 
-        printf("3\n");
 
         make_clusters(clusters, &EndOfCluster, &sizeOfClustersArray, roots, sizeOfRootsArray, synLib);
-        printf("4\n");
         
         qsort(clusters, sizeOfClustersArray, sizeof(clusters[0]), compare_clusters);
-        printf("5\n");
 
         print_clusters2(clusters, sizeOfClustersArray);
-        printf("6\n");
 	}
 	else {
 		printf("synLib failed to load. Bye bye.\n");
@@ -104,23 +100,23 @@ int main(void) {
 void choose_case(char caseFileName[], int *linesToBeAnalyzed) {
     int caseNumber;
 
-    printf("Please write the number of which case you want. \n Shirt: 1 \n Toothbrush: 2 \n test: 3\n Amazon test: 4\n Choose a case:  ");
+    printf("Please write the number of which case you want. \n1: Amazon_Instant_Video_5.txt\n2: Musical_Instruments_5.txt\n3: Cell_Phones_and_Accessories_5.txt\n4: Video_Games_5.txt\nChoose a case:  ");
 	scanf("%d", &caseNumber);
     printf("Please write the number of reviews you want to be analyzed: \n");
     scanf("%d", linesToBeAnalyzed);
 
     switch (caseNumber) {
-        case 1: 
-        	strcpy(caseFileName, "shirt.txt");
-        	break;
-        case 2: 
-        	strcpy(caseFileName, "tooth.txt");
-        	break;
+        case 1:
+            strcpy(caseFileName, "Amazon_Instant_Video_5.txt");
+            break;
+        case 2:
+            strcpy(caseFileName, "Musical_Instruments_5.txt");
+            break;
         case 3:
-            strcpy(caseFileName, "test.txt");
+            strcpy(caseFileName, "Cell_Phones_and_Accessories_5.txt"); 
             break;
         case 4:
-            strcpy(caseFileName, "Amazon_Instant_Video_5.txt");
+            strcpy(caseFileName, "Video_Games_5.txt"); 
             break;
     }
 }
@@ -128,7 +124,6 @@ void choose_case(char caseFileName[], int *linesToBeAnalyzed) {
 /* receives a FILE pointer. */
 /* Makes a clean string (with wordnet) with a review in it, and calls the other functions with each individual word. */
 void clean_review_and_make_roots_array(char caseFileName[], root roots[], int *sizeOfRootsArray, int linesToBeAnalyzed) {
-    printf("2\n");
     FILE *nounLib = fopen("noun_lib.txt", "r"),
          *nounExceptions = fopen("noun_exc.txt", "r"),
          *caseFileDirty = fopen("caseFileDirty.txt", "w"),
@@ -136,6 +131,7 @@ void clean_review_and_make_roots_array(char caseFileName[], root roots[], int *s
     root rootsTemp[ROOTS_ARRAY_SIZE];
     int sizeOfRootsArrayTemp = 0;
         *sizeOfRootsArray = 0;
+    
 
 
 
@@ -147,6 +143,12 @@ void clean_review_and_make_roots_array(char caseFileName[], root roots[], int *s
 
 
         scan_words_into_temp_array(caseFileClean, rootsTemp, &sizeOfRootsArrayTemp);
+
+        /*
+        for (i = 0; i < sizeOfRootsArrayTemp; i++) {
+            printf("Root %d: %s\n", i, rootsTemp[i].rootName);
+        }
+        */
 
         qsort(rootsTemp, sizeOfRootsArrayTemp, sizeof(root), compareLALA);
 
@@ -165,7 +167,7 @@ void clean_review_and_make_roots_array(char caseFileName[], root roots[], int *s
         exit(EXIT_FAILURE);
     }
 }
-
+int j = 0;
 void get_reviews_from_file (char caseFileName[], FILE *caseFileDirty, int linesToBeAnalyzed) {
     char reviewLineTemp[LINE_SIZE];
     char reviewLine[LINE_SIZE];
@@ -174,6 +176,17 @@ void get_reviews_from_file (char caseFileName[], FILE *caseFileDirty, int linesT
 
     for (i = 0; i < linesToBeAnalyzed; ++i) {
         fgets(reviewLineTemp, LINE_SIZE, caseFile);
+
+
+
+
+        if (strlen(reviewLineTemp) > j) {
+            j = strlen(reviewLineTemp);
+        }
+
+
+
+
         /* fscanf(caseFile, "%[^\[]") */
         sscanf(reviewLineTemp, "%*s %*s %*s %*s %*s %*[^,] %*[^0-9] %*d, %*d], %*s \"%[^\"]", reviewLine); 
         /* sscanf(reviewLineTemp, "%*s %*s %*s %*s %*s %*[^0-9] %*d, %*d], %*s \"%[^\"]", reviewLine); */
@@ -183,6 +196,9 @@ void get_reviews_from_file (char caseFileName[], FILE *caseFileDirty, int linesT
         /* sscanf(reviewLineTemp, "%*[^[] %*[^:] \"%[^\"] %*[^\n]\n", reviewLine); */
         fprintf(caseFileDirty, "%s\n", reviewLine);
     }
+
+    printf("j er FUCKING BLEVET: %d\n", j);
+
     fclose(caseFileDirty);
     fclose(caseFile);
     caseFileDirty = fopen("caseFileDirty.txt", "r");
