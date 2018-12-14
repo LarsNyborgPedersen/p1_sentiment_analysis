@@ -439,11 +439,11 @@ int is_representative_and_not_end_of_line(root roots[], char synonymLine[], int 
 	return roots[rootIndex].isRepresentative == TRUE && synonymLine[lineIndex] != '\n' && synonymLine[lineIndex] != '*';
 }
 
-void find_representatives(root roots[], int numberOfRoots, FILE *synLib) {
+void find_representatives(root roots[], int sizeOfRootsArray, FILE *synLib) {
     int i = 0, j = 0, k = 0, synIndex = 0;
     char synonym[WORD_SIZE], synonymLine[LINE_SIZE];
 
-    for (i = 0; i < numberOfRoots; i++) {
+    for (i = 0; i < sizeOfRootsArray; i++) {
         go_to_first_syn_line(roots[i].rootName, synLib);
 
         /* Hvis ordet ikke blev fundet i vores bibliotek: */
@@ -458,13 +458,7 @@ void find_representatives(root roots[], int numberOfRoots, FILE *synLib) {
 
             for (j = 1, k = 0; roots[i].isRepresentative == TRUE && synonymLine[j] != '\n' && synonymLine[j] != '*'; j++, k = 0) {
 
-                while (synonymLine[j] != '|') {
-                    synonym[k++] = synonymLine[j++];
-                }
-
-                synonym[k] = '\0';
-
-                synIndex = syn_in_array(synonym, roots, numberOfRoots);
+                synIndex = find_synonym_in_roots(synonymLine, synonym, &j, &k, roots, sizeOfRootsArray);
 
                 if (synIndex != FALSE && roots[i].count < roots[synIndex].count) {
                     roots[i].isRepresentative = 0;
