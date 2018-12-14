@@ -45785,7 +45785,6 @@ gnosticism
 gnp
 gnu
 gnu goat
-go
 go-ahead
 go-around
 go-between
@@ -112728,7 +112727,6 @@ words
 words per minute
 wordsmith
 wordsworth
-work
 work-board
 work-clothes
 work-clothing
@@ -112796,7 +112794,6 @@ workout suit
 workpiece
 workplace
 workroom
-works
 works council
 works program
 worksheet
