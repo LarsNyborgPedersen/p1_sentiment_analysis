@@ -26,7 +26,7 @@ void clean_review_and_make_roots_array(char caseFileName[], root roots[], int *s
 void get_reviews_from_file (char caseFileName[], FILE *caseFileDirty, int linesToBeAnalyzed);
 void clean_review(FILE *caseFileDirty, FILE *caseFileClean);
 void scan_words_into_temp_array(FILE *caseFileClean, root rootsTemp[], int *sizeOfRootsArrayTemp);
-void make_roots_array( root roots[], int *sizeOfRootsArray, root rootsTemp[], int sizeOfRootsArrayTemp, FILE *nounLib, FILE *nounExceptions, fpos_t *posNoun, fpos_t *posExc);
+void make_roots_array( root roots[], int *sizeOfRootsArray, root rootsTemp[], int sizeOfRootsArrayTemp, FILE *nounLib, FILE *nounExceptions);
 int is_noun(FILE *nounLib, FILE *nounExceptions, char *word, fpos_t *posNoun, fpos_t *posExc);
 int found_in_lib(char word[], FILE *lib, fpos_t *pos);
 int found_in_lib_exc(char word[], FILE *lib, fpos_t *pos);
@@ -54,7 +54,6 @@ int main(void) {
 	root EndOfCluster = {"*EOC*", FALSE, FALSE, FALSE};
     int sizeOfRootsArray,
         sizeOfClustersArray;
-    int i;
     int linesToBeAnalyzed = 0;
     clock_t start, end;
     double cpu_time_used;
@@ -69,26 +68,30 @@ int main(void) {
 	if (synLib != NULL) {
 
         start = clock();
+
 		clean_review_and_make_roots_array(caseFileName, roots, &sizeOfRootsArray, linesToBeAnalyzed);
+
         end = clock();
         cpu_time_used = ((double)(end - start) / CLOCKS_PER_SEC);
         printf("make_roots_arry uses %lf seconds\n", cpu_time_used);
         printf("sizeOfRootsArray = %d\n", sizeOfRootsArray);
         qsort(roots, sizeOfRootsArray, sizeof(root), compare);
 
+
         find_representatives(roots, sizeOfRootsArray, synLib);
 
-        
+
+
+        printf("3\n");
 
         make_clusters(clusters, &EndOfCluster, &sizeOfClustersArray, roots, sizeOfRootsArray, synLib);
+        printf("4\n");
         
         qsort(clusters, sizeOfClustersArray, sizeof(clusters[0]), compare_clusters);
-
-        for (i = 0; i < sizeOfRootsArray; i++) {
-            printf("word: %s\n", roots[i].rootName);
-        }
+        printf("5\n");
 
         print_clusters2(clusters, sizeOfClustersArray);
+        printf("6\n");
 	}
 	else {
 		printf("synLib failed to load. Bye bye.\n");
@@ -125,33 +128,33 @@ void choose_case(char caseFileName[], int *linesToBeAnalyzed) {
 /* receives a FILE pointer. */
 /* Makes a clean string (with wordnet) with a review in it, and calls the other functions with each individual word. */
 void clean_review_and_make_roots_array(char caseFileName[], root roots[], int *sizeOfRootsArray, int linesToBeAnalyzed) {
+    printf("2\n");
     FILE *nounLib = fopen("noun_lib.txt", "r"),
          *nounExceptions = fopen("noun_exc.txt", "r"),
          *caseFileDirty = fopen("caseFileDirty.txt", "w"),
          *caseFileClean = fopen("clean_review.txt", "w");
     root rootsTemp[ROOTS_ARRAY_SIZE];
-    fpos_t posNoun, posExc;
     int sizeOfRootsArrayTemp = 0;
         *sizeOfRootsArray = 0;
 
-    if (caseFileClean != NULL) {
-        printf("HEJSA foer marni\n");
 
+
+    if (caseFileClean != NULL && caseFileDirty && nounLib != NULL && nounExceptions != NULL ) {
         get_reviews_from_file(caseFileName, caseFileDirty, linesToBeAnalyzed);
-        printf("HEJSA efter marni\n");
 
         clean_review(caseFileDirty, caseFileClean);
+
+
 
         scan_words_into_temp_array(caseFileClean, rootsTemp, &sizeOfRootsArrayTemp);
 
         qsort(rootsTemp, sizeOfRootsArrayTemp, sizeof(root), compareLALA);
 
-        rewind(nounLib);
-        rewind(nounExceptions);
-        fgetpos(nounLib, &posNoun);
-        fgetpos(nounExceptions, &posExc);
+        
 
-        make_roots_array(roots, sizeOfRootsArray, rootsTemp, sizeOfRootsArrayTemp, nounLib, nounExceptions, &posNoun, &posExc);
+
+
+        make_roots_array(roots, sizeOfRootsArray, rootsTemp, sizeOfRootsArrayTemp, nounLib, nounExceptions);
 
         fclose(nounLib);
         fclose(caseFileClean);
@@ -178,7 +181,6 @@ void get_reviews_from_file (char caseFileName[], FILE *caseFileDirty, int linesT
         /* sscanf(reviewLineTemp, "%*s %*s %*s %*s %*s %*[^0-9] %*d, %*d], %*s \"%[^\"]\" %*[^\n]\n", reviewLine); */
 
         /* sscanf(reviewLineTemp, "%*[^[] %*[^:] \"%[^\"] %*[^\n]\n", reviewLine); */
-         printf("%s\n", reviewLine);
         fprintf(caseFileDirty, "%s\n", reviewLine);
     }
     fclose(caseFileDirty);
@@ -228,12 +230,21 @@ void scan_words_into_temp_array(FILE *caseFileClean, root rootsTemp[], int *size
     }
 }
 
-void make_roots_array( root roots[], int *sizeOfRootsArray, root rootsTemp[], int sizeOfRootsArrayTemp, FILE *nounLib, FILE *nounExceptions, fpos_t *posNoun, fpos_t *posExc) {
+void make_roots_array( root roots[], int *sizeOfRootsArray, root rootsTemp[], int sizeOfRootsArrayTemp, FILE *nounLib, FILE *nounExceptions) {
     int i;
     int indexExistingWord = -1;
+    fpos_t posNoun, posExc;
+
+    /* rewind(nounLib);
+        rewind(nounExceptions); */
+    fgetpos(nounLib, &posNoun);
+    fgetpos(nounExceptions, &posExc); 
+    printf("KOMMER DU HERTIL?\n");
+
+
 
     for (i = 0; i < sizeOfRootsArrayTemp; i++) {
-        if (is_noun(nounLib, nounExceptions, rootsTemp[i].rootName, posNoun, posExc)) {
+        if (is_noun(nounLib, nounExceptions, rootsTemp[i].rootName, &posNoun, &posExc)) {
             indexExistingWord = index_of_existing_word(rootsTemp[i].rootName, roots, *sizeOfRootsArray);
 
             if (indexExistingWord == FALSE) {
@@ -385,6 +396,7 @@ int compare(const void *p1, const void *p2) {
 void find_representatives(root roots[], int numberOfRoots, FILE *synLib) {
     int i = 0, j = 0, k = 0, synIndex = 0;
     char synonym[WORD_SIZE], synonymLine[LINE_SIZE];
+
 
     for (i = 0; i < numberOfRoots; i++) {
         find_root(roots[i].rootName, synLib);
