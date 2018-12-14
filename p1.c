@@ -440,32 +440,32 @@ int is_representative_and_not_end_of_line(root roots[], char synonymLine[], int 
 }
 
 void find_representatives(root roots[], int sizeOfRootsArray, FILE *synLib) {
-    int i = 0, j = 0, k = 0, synIndex = 0;
+    int rootIndex = 0, j = 0, wordIndex = 0, synIndex = 0;
     char synonym[WORD_SIZE], synonymLine[LINE_SIZE];
 
-    for (i = 0; i < sizeOfRootsArray; i++) {
-        go_to_first_syn_line(roots[i].rootName, synLib);
+    for (rootIndex = 0; rootIndex < sizeOfRootsArray; rootIndex++) {
+        go_to_first_syn_line(roots[rootIndex].rootName, synLib);
 
         /* Hvis ordet ikke blev fundet i vores bibliotek: */
         if (feof(synLib)) {
 
-            roots[i].isRepresentative = 0;
+            roots[rootIndex].isRepresentative = 0;
             rewind(synLib); continue;
         }
 
         do {
             fgets(synonymLine, LINE_SIZE, synLib);
 
-            for (j = 1, k = 0; roots[i].isRepresentative == TRUE && synonymLine[j] != '\n' && synonymLine[j] != '*'; j++, k = 0) {
+            for (j = 1, wordIndex = 0; roots[rootIndex].isRepresentative == TRUE && synonymLine[j] != '\n' && synonymLine[j] != '*'; j++, wordIndex = 0) {
 
-                synIndex = find_synonym_in_roots(synonymLine, synonym, &j, &k, roots, sizeOfRootsArray);
+                synIndex = find_synonym_in_roots(synonymLine, synonym, &j, &wordIndex, roots, sizeOfRootsArray);
 
-                if (synIndex != FALSE && roots[i].count < roots[synIndex].count) {
-                    roots[i].isRepresentative = 0;
+                if (synIndex != FALSE && roots[rootIndex].count < roots[synIndex].count) {
+                    roots[rootIndex].isRepresentative = 0;
                 }
             }
 
-        } while (roots[i].isRepresentative == TRUE && synonymLine[j] != '*');
+        } while (roots[rootIndex].isRepresentative == TRUE && synonymLine[j] != '*');
     }
 
 }
