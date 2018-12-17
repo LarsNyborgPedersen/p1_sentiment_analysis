@@ -79,7 +79,7 @@ void choose_case(char caseFileName[], int *linesToBeAnalyzed) {
 
     printf("Please write the number of which case you want. \n 1: Reviews of musical intruments\n 2: Reviews of phones and accessories\n Choose a case:  ");
 	scanf(" %d", &caseNumber);
-    linesToBeAnalyzed = LINES_TO_BE_ANALYSED;
+    *linesToBeAnalyzed = LINES_TO_BE_ANALYSED;
 
     switch (caseNumber) {
         case 1:
