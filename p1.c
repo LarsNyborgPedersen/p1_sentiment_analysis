@@ -5,6 +5,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <time.h>
+#define LINES_TO_BE_ANALYSED 700
 #define WORD_SIZE 100
 #define SYN_ARRAY_SIZE 32
 #define LINE_SIZE 15000
@@ -78,9 +79,7 @@ void choose_case(char caseFileName[], int *linesToBeAnalyzed) {
 
     printf("Please write the number of which case you want. \n 1: Reviews of musical intruments\n 2: Reviews of phones and accessories\n Choose a case:  ");
 	scanf(" %d", &caseNumber);
-    printf("Please write the number of reviews you want to analyze (maximum of 400 reviews)\n Choose amount of reviews: ");
-    scanf(" %d", linesToBeAnalyzed);
-	printf("\n");
+    linesToBeAnalyzed = LINES_TO_BE_ANALYSED;
 
     switch (caseNumber) {
         case 1:
@@ -295,7 +294,7 @@ int found_in_lib(char word[], FILE *nounLib, fpos_t *pos) {
 /* Leder efter ordene i nounExceptions */
 int found_in_lib_exc(char word[], FILE *nounExceptions, fpos_t *pos) {
     int isNoun = 0;
-    char tempNouns[100];  
+    char tempNouns[100];
     char tempSingular[100];
     char tempPlural[100];
 	char firstCharOfTempNoun,
