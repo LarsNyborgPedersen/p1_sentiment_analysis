@@ -21,7 +21,7 @@ typedef struct  {
     int clusterCount;
 } root;
 
-void choose_case(char caseFileName[], int *linesToBeAnalyzed);
+void choose_case(char caseFileName[]);
 void clean_review_and_make_roots_array(char caseFileName[], root roots[], int *sizeOfRootsArray, int linesToBeAnalyzed);
 void get_reviews_from_file(char caseFileName[], FILE *caseFileDirty, int linesToBeAnalyzed);
 void clean_review(FILE *caseFileDirty, FILE *caseFileClean);
@@ -50,7 +50,7 @@ int main(void) {
 	root EndOfCluster = {"*EOC*", FALSE, FALSE, FALSE};
     int sizeOfRootsArray,
         sizeOfClustersArray;
-    int linesToBeAnalyzed = 400;
+    int linesToBeAnalyzed = LINES_TO_BE_ANALYSED;
 	FILE *synLib = fopen("syn_lib.txt", "r");
     char caseFileName[WORD_SIZE];
 
@@ -74,12 +74,12 @@ int main(void) {
 }
 
 /* Brugeren vælger en case, som bruges i switchen til at vælge hvilken fil der skal åbnes, og derudover vælges antal linjer */
-void choose_case(char caseFileName[], int *linesToBeAnalyzed) {
+void choose_case(char caseFileName[]) {
     int caseNumber;
 
     printf("Please write the number of which case you want. \n 1: Reviews of musical intruments\n 2: Reviews of phones and accessories\n Choose a case:  ");
 	scanf(" %d", &caseNumber);
-    *linesToBeAnalyzed = LINES_TO_BE_ANALYSED;
+
 
     switch (caseNumber) {
         case 1:
