@@ -14,13 +14,15 @@
 #define FALSE -1
 #define TRUE 1
 
+/* Struct to represent one of our nouns */
 typedef struct  {
-	char rootName[WORD_SIZE];
-	int count;
-	int isRepresentative;
+    char rootName[WORD_SIZE];
+    int count;
+    int isRepresentative;
     int clusterCount;
 } root;
 
+/* prototypes */
 void choose_case(char caseFileName[]);
 void clean_review_and_make_roots_array(char caseFileName[], root roots[], int *sizeOfRootsArray, int linesToBeAnalyzed);
 void get_reviews_from_file(char caseFileName[], FILE *caseFileDirty, int linesToBeAnalyzed);
@@ -45,52 +47,51 @@ void print_clusters(root *clusters[][SYN_ARRAY_SIZE], int sizeOfClustersArray);
 int find_synonym_in_roots(char synonymLine[], char synonym[], int *i, int *j, root roots[], int sizeOfRootsArray);
 
 int main(void) {
-	root roots[ROOTS_ARRAY_SIZE];
-	root *clusters[CLUSTERS_SIZE][SYN_ARRAY_SIZE];
-	root EndOfCluster = {"*EOC*", FALSE, FALSE, FALSE};
-    int sizeOfRootsArray,
-        sizeOfClustersArray;
+    root roots[ROOTS_ARRAY_SIZE];
+    root *clusters[CLUSTERS_SIZE][SYN_ARRAY_SIZE];
+    root EndOfCluster = {"*EOC*", FALSE, FALSE, FALSE};
+    int sizeOfRootsArray = 0,
+        sizeOfClustersArray = 0;
     int linesToBeAnalyzed = LINES_TO_BE_ANALYSED;
-	FILE *synLib = fopen("syn_lib.txt", "r");
+    FILE *synLib = fopen("syn_lib.txt", "r");
     char caseFileName[WORD_SIZE];
 
     /* choose which file to analyze and the number of lines */
-	choose_case(caseFileName);
+    choose_case(caseFileName);
 
-	if (synLib != NULL) {
+    if (synLib != NULL) {
         clean_review_and_make_roots_array(caseFileName, roots, &sizeOfRootsArray, linesToBeAnalyzed);
         qsort(roots, sizeOfRootsArray, sizeof(root), compare);
         find_representatives(roots, sizeOfRootsArray, synLib);
         make_clusters(clusters, &EndOfCluster, &sizeOfClustersArray, roots, sizeOfRootsArray, synLib);
         qsort(clusters, sizeOfClustersArray, sizeof(clusters[0]), compare_clusters);
         print_clusters(clusters, sizeOfClustersArray);
-	}
-	else {
-		printf("syn_lib.txt failed to load. Bye bye.\n");
+    }
+    else {
+        printf("syn_lib.txt failed to load. Bye bye.\n");
         exit(EXIT_FAILURE);
-	}
+    }
 
-	return 0;
+    return 0;
 }
 
-/* Brugeren vælger en case, som bruges i switchen til at vælge hvilken fil der skal åbnes, og derudover vælges antal linjer */
+/* Brugeren vælger en case, som bruges i switchen til at vælge hvilken fil der skal åbnes */
 void choose_case(char caseFileName[]) {
     int caseNumber;
 
     printf("Please write the number of which case you want. \n 1: Reviews of musical intruments\n 2: Reviews of phones and accessories\n Choose a case:  ");
-	scanf(" %d", &caseNumber);
-
+    scanf(" %d", &caseNumber);
 
     switch (caseNumber) {
         case 1:
-			strcpy(caseFileName, "Musical_Instruments_5.txt");
-			break;
+            strcpy(caseFileName, "Musical_Instruments_5.txt");
+            break;
         case 2:
-			strcpy(caseFileName, "Cell_Phones_and_Accessories_5.txt");
-			break;
-		default:
-			printf("Please try again...\n");
-			exit(EXIT_FAILURE);
+            strcpy(caseFileName, "Cell_Phones_and_Accessories_5.txt");
+            break;
+        default:
+            printf("Please try again...\n");
+            exit(EXIT_FAILURE);
     }
 }
 
@@ -99,35 +100,34 @@ void clean_review_and_make_roots_array(char caseFileName[], root roots[], int *s
     FILE *nounLib = fopen("noun_lib.txt", "r"),
          *nounExceptions = fopen("noun_exc.txt", "r"),
          *caseFileDirty = fopen("caseFileDirty.txt", "w"),
-         *caseFileClean = fopen("clean_review.txt", "w");
+         *caseFileClean = fopen("caseFileClean.txt", "w");
     root rootsTemp[ROOTS_ARRAY_SIZE];
     int sizeOfRootsArrayTemp = 0;
-        *sizeOfRootsArray = 0;
 
-	/*Tjekker om filerne er åbne og kører de funktioner som skal bruges*/
+    /*Tjekker om filerne er åbne og kører de funktioner som skal bruges*/
     if (caseFileClean != NULL && caseFileDirty != NULL && nounLib != NULL && nounExceptions != NULL) {
-		printf("Retrieving reviews...");
+        printf("\nRetrieving reviews...");
         get_reviews_from_file(caseFileName, caseFileDirty, linesToBeAnalyzed);
-		printf(" Done!\n");
+        printf(" Done!\n");
 
-		printf("Cleaning reviews...  ");
+        printf("Cleaning reviews...  ");
         clean_review(caseFileDirty, caseFileClean);
-		printf(" Done!\n");
+        printf(" Done!\n");
         /* vi putter først ordene i et midlertidigt array, så vi kan sortere ordene i alfabetisk rækkefølge i is_noun senere. */
-		printf("Sorting reviews...   ");
+        printf("Sorting reviews...   ");
         scan_words_into_temp_array(caseFileClean, rootsTemp, &sizeOfRootsArrayTemp);
         qsort(rootsTemp, sizeOfRootsArrayTemp, sizeof(root), compare);
         printf(" Done!\n");
         /* Her laves det endelige array root roots[] */
-		printf("Checking for nouns...");
+        printf("Checking for nouns...");
         make_roots_array(roots, sizeOfRootsArray, rootsTemp, sizeOfRootsArrayTemp, nounLib, nounExceptions);
         printf(" Done!\n");
 
         fclose(nounLib);
-        fclose(caseFileClean);
+        fclose(nounExceptions);
     }
     else {
-        printf("clean_review.txt, caseFileDirty.txt, noun_lib.txt or noun_exc.txt failed to load. Bye bye.\n");
+        printf("caseFileClean.txt, caseFileDirty.txt, noun_lib.txt or noun_exc.txt failed to load. Bye bye.\n");
         exit(EXIT_FAILURE);
     }
 }
@@ -139,7 +139,7 @@ void get_reviews_from_file (char caseFileName[], FILE *caseFileDirty, int linesT
     FILE *caseFile = fopen(caseFileName, "r");
     int i;
     if (caseFile != NULL) {
-    	/*Vi scanner linjerne fra vores review kilde fil, og sætter ordene ind i et temp array*/
+        /*Vi scanner linjerne fra vores review kilde fil, og sætter ordene ind i et temp array*/
         for (i = 0; i < linesToBeAnalyzed; ++i) {
             fgets(reviewLineTemp, LINE_SIZE, caseFile);
             sscanf(reviewLineTemp, "%*s %*s %*s %*s %*s %*[^,] %*[^0-9] %*d, %*d], %*s \"%[^\"]", reviewLine);
@@ -161,7 +161,7 @@ void clean_review(FILE *caseFileDirty, FILE *caseFileClean) {
     if (caseFileDirty != NULL) {
         /*Vi indlæser hver eneste bogstav, indtil vores review fil er udtømt*/
         while (!feof(caseFileDirty)) {
-    		/*Vi tjekker tegn for tegn om det er et stort bogstav eller et tegn, så bliver de lavet om eller fjernet*/
+            /*Vi tjekker tegn for tegn om det er et stort bogstav eller et tegn, så bliver de lavet om eller fjernet*/
             currentChar = fgetc(caseFileDirty);
             if (isupper(currentChar)) {
                 currentChar = tolower(currentChar);
@@ -176,7 +176,7 @@ void clean_review(FILE *caseFileDirty, FILE *caseFileClean) {
         exit(EXIT_FAILURE);
     }
     fclose(caseFileClean);
-    caseFileClean = fopen("clean_review.txt", "r");
+    caseFileClean = fopen("caseFileClean.txt", "r");
     fclose(caseFileDirty);
 }
 
@@ -188,24 +188,25 @@ void scan_words_into_temp_array(FILE *caseFileClean, root rootsTemp[], int *size
 
     while (!feof(caseFileClean)) {
         scanRes = fscanf(caseFileClean, " %s ", word);
-		/*Hvis vi har scannet array succesfuldt*/
+        /*Hvis vi har scannet array succesfuldt*/
         if (scanRes == 1) {
-			/*Vi finder indexet i vores array*/
+            /*Vi finder indexet i vores array*/
             indexExistingWord = index_of_existing_word(word, rootsTemp, *sizeOfRootsArrayTemp);
 
             if (indexExistingWord == FALSE) {
-				/*Hvis ordet ikke står i vores array, så oprettet vi ordet som et nyt element*/
+                /*Hvis ordet ikke står i vores array, så oprettet vi ordet som et nyt element*/
                 /* printf("%s FALSE!!!\n", word); */
                 strcpy(rootsTemp[*sizeOfRootsArrayTemp].rootName, word);
                 rootsTemp[*sizeOfRootsArrayTemp].count = 1;
                 (*sizeOfRootsArrayTemp)++;
             }
             else {
-				/*Ellers tæller vi hyppigheden op*/
+                /*Ellers tæller vi hyppigheden op*/
                 rootsTemp[indexExistingWord].count++;
             }
         }
     }
+    fclose(caseFileClean);
 }
 
 /* Her scanner vi vores ord ind i det endelige array */
@@ -221,9 +222,7 @@ void make_roots_array(root roots[], int *sizeOfRootsArray, root rootsTemp[], int
     /* For alle ord i vores midlertidige array, så puttes de i det nye, hvis de er navneord. */
     for (i = 0; i < sizeOfRootsArrayTemp; i++) {
         if (is_noun(nounLib, nounExceptions, rootsTemp[i].rootName, &posNoun, &posExc)) {
-            /* indexExistingWord = index_of_existing_word(rootsTemp[i].rootName, roots, *sizeOfRootsArray); */
             indexExistingWord = word_in_roots_array(rootsTemp[i].rootName, roots, *sizeOfRootsArray);
-
 
             if (indexExistingWord == FALSE) {
                 strcpy(roots[*sizeOfRootsArray].rootName, rootsTemp[i].rootName);
@@ -263,10 +262,10 @@ int is_noun(FILE *nounLib, FILE *nounExceptions, char word[], fpos_t *posNoun, f
 /* Leder efter ordet i nounLib */
 int found_in_lib(char word[], FILE *nounLib, fpos_t *pos) {
     char tempNoun[100];
-	char firstCharOfTempNoun,
+    char firstCharOfTempNoun,
         firstCharOfWord;
     int isNoun = 0;
-	firstCharOfWord = word[0];
+    firstCharOfWord = word[0];
 
     /* Sætter positionen til det sted vi sidst fandt et ord i nounLib, eller starten, hvis intet ord er fundet endnu*/
     fsetpos(nounLib, pos);
@@ -274,7 +273,7 @@ int found_in_lib(char word[], FILE *nounLib, fpos_t *pos) {
     do {
         fgets(tempNoun, 100, nounLib);
         tempNoun[strlen(tempNoun) - 1] = '\0';
-		firstCharOfTempNoun = tempNoun[0];
+        firstCharOfTempNoun = tempNoun[0];
 
         if (strcmp(word, tempNoun) == 0) {
             /* Gå tilbage til starten af det ord i Nounlib som matchede, i tilfælde af samme ord kommer igen. */
@@ -297,15 +296,15 @@ int found_in_lib_exc(char word[], FILE *nounExceptions, fpos_t *pos) {
     char tempNouns[100];
     char tempSingular[100];
     char tempPlural[100];
-	char firstCharOfTempNoun,
+    char firstCharOfTempNoun,
         firstCharOfWord;
-	firstCharOfWord = word[0];
+    firstCharOfWord = word[0];
 
     /* Sætter positionen til det sted vi sidst fandt et ord i nounExceptions, eller starten, hvis intet ord er fundet endnu*/
     fsetpos(nounExceptions, pos);
     do {
         fgets(tempNouns, 100, nounExceptions);
-		firstCharOfTempNoun = tempNouns[0];
+        firstCharOfTempNoun = tempNouns[0];
         sscanf(tempNouns, "%s %s", tempPlural, tempSingular);
         if (strcmp(word, tempPlural) == 0) {
             /* Gå tilbage til starten af det ord i NounExceptions som matchede, i tilfælde af samme ord kommer igen. */
@@ -462,7 +461,7 @@ void make_clusters(root *clusters[][SYN_ARRAY_SIZE], root *EndOfCluster, int *si
     /*Vi spoler tilbage i vores fil efter find_representatives*/
     rewind(synLib);
 
-	printf("Finding synonyms...  ");
+    printf("Finding synonyms...  ");
 
     /*Vi tjekker vores array for repræsentanter*/
     for (rootIndex = 0, clusterIndex = 0, membersIndex = 0; rootIndex < sizeOfRootsArray; rootIndex++, membersIndex = 0) {
@@ -503,7 +502,7 @@ void make_clusters(root *clusters[][SYN_ARRAY_SIZE], root *EndOfCluster, int *si
     /*Vi tæller størrelsen af vores cluster array op*/
     *sizeOfClustersArray = clusterIndex;
 
-	printf(" Done!\n");
+    printf(" Done!\n");
 }
 
 /* Finder største synonymlinje for et navneord i vores synLib bibliotek */
@@ -583,7 +582,7 @@ void print_clusters(root *clusters[][SYN_ARRAY_SIZE], int sizeOfClustersArray) {
         fprintf(fp,"%s;%d\n", clusters[i][0]->rootName, clusters[i][0]->clusterCount);
         printf(" Aspect: %-10s Mentioned %3d times\n", clusters[i][0]->rootName, clusters[i][0]->clusterCount);
     }
-	printf("\n There has been made a CSV file in the program's folder. \n You can open it in Excel and make a graph easily.\n");
+    printf("\n There has been made a CSV file in the program's folder. \n You can open it in Excel and make a graph easily.\n\n");
 }
 
 /* Finder et ord af gangen på vores synonymlinje og returnere index på dets index i root roots[], ved hjælp af funktionen word_in_roots_array */
