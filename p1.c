@@ -55,7 +55,7 @@ int main(void) {
     char caseFileName[WORD_SIZE];
 
     /* choose which file to analyze and the number of lines */
-	choose_case(caseFileName, &linesToBeAnalyzed);
+	choose_case(caseFileName);
 
 	if (synLib != NULL) {
         clean_review_and_make_roots_array(caseFileName, roots, &sizeOfRootsArray, linesToBeAnalyzed);
